@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 	"unsafe"
+
+	"github.com/StackExchange/wmi"
 )
 
 var (
@@ -66,6 +68,7 @@ type PROCESSENTRY32 struct {
 	PriorityClassBase int32
 	Flags             uint32
 	ExeFile           [MAX_PATH]uint16
+	CommandLine       *string
 }
 
 func init() {
@@ -395,7 +398,18 @@ func (self *ProcTime) Get(pid int) error {
 }
 
 func (self *ProcArgs) Get(pid int) error {
-	return notImplemented()
+
+	var args []string
+
+	dst, err := GetWin32Proc(int32(pid))
+	if err != nil {
+		return fmt.Errorf("could not get CommandLine: %s", err)
+	}
+	fmt.Printf("command line: %v", *dst[0].CommandLine)
+	args = append(args, *dst[0].CommandLine)
+	self.List = args
+
+	return nil
 }
 
 func (self *ProcExe) Get(pid int) error {
@@ -431,4 +445,18 @@ func (self *FileSystemUsage) Get(path string) error {
 func notImplemented() error {
 	panic("Not Implemented")
 	return nil
+}
+
+func GetWin32Proc(pid int32) ([]PROCESSENTRY32, error) {
+	var dst []PROCESSENTRY32
+	query := fmt.Sprintf("WHERE ProcessId = %d", pid)
+	q := wmi.CreateQuery(&dst, query)
+	err := wmi.Query(q, &dst)
+	if err != nil {
+		return []PROCESSENTRY32{}, fmt.Errorf("could not get win32Proc: %s", err)
+	}
+	if len(dst) != 1 {
+		return []PROCESSENTRY32{}, fmt.Errorf("could not get win32Proc: empty")
+	}
+	return dst, nil
 }
