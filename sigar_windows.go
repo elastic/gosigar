@@ -103,31 +103,82 @@ func (self *Swap) Get() error {
 	return nil
 }
 
+func getCPUCount() uint64 {
+	var sysinfo C.SYSTEM_INFO
+	C.GetSystemInfo(&sysinfo)
+
+	cpuCount := uint64(sysinfo.dwNumberOfProcessors)
+	return cpuCount
+}
+
+func parseCpuStat(self *Cpu, performanceInformation C.NT_SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION) {
+	self.Idle = *((*uint64)(unsafe.Pointer(&performanceInformation.IdleTime)))
+	self.User = *((*uint64)(unsafe.Pointer(&performanceInformation.UserTime)))
+	self.Nice = 0 //not applicable to windows
+	//windows kenel metric time contain kernel + idle
+	self.Sys = *((*uint64)(unsafe.Pointer(&performanceInformation.KernelTime))) - self.Idle
+	self.Wait = 0 //unavailable
+	self.Irq = *((*uint64)(unsafe.Pointer(&performanceInformation.InterruptTime)))
+	self.SoftIrq = 0 //unavailable
+	self.Stolen = 0  //unavailable
+}
+
 func (self *Cpu) Get() error {
 
-	var lpIdleTime, lpKernelTime, lpUserTime C.FILETIME
-
-	succeeded := C.GetSystemTimes(&lpIdleTime, &lpKernelTime, &lpUserTime)
-	if succeeded == C.FALSE {
-		return syscall.GetLastError()
+	cpuCount := getCPUCount()
+	cpuList := CpuList{}
+	err := cpuList.Get()
+	if err != nil {
+		return fmt.Errorf("Error retrieving CPUs :%d", err)
+	}
+	self.User = 0
+	self.Nice = 0
+	self.Sys = 0
+	self.Idle = 0
+	self.Wait = 0
+	self.Irq = 0
+	self.SoftIrq = 0
+	self.Stolen = 0
+	for i := uint64(0); i < cpuCount; i++ {
+		cpu := cpuList.List[i]
+		self.User += cpu.User
+		self.Nice += cpu.Nice
+		self.Sys += cpu.Sys
+		self.Idle += cpu.Idle
+		self.Wait += cpu.Wait
+		self.Irq += cpu.Irq
+		self.SoftIrq += cpu.SoftIrq
+		self.Stolen += cpu.Stolen
 	}
 
-	LOT := float64(0.0000001)
-	HIT := (LOT * 4294967296.0)
-
-	idle := ((HIT * float64(lpIdleTime.dwHighDateTime)) + (LOT * float64(lpIdleTime.dwLowDateTime)))
-	user := ((HIT * float64(lpUserTime.dwHighDateTime)) + (LOT * float64(lpUserTime.dwLowDateTime)))
-	kernel := ((HIT * float64(lpKernelTime.dwHighDateTime)) + (LOT * float64(lpKernelTime.dwLowDateTime)))
-	system := (kernel - idle)
-
-	self.Idle = uint64(idle)
-	self.User = uint64(user)
-	self.Sys = uint64(system)
 	return nil
 }
 
 func (self *CpuList) Get() error {
-	//return notImplemented()
+
+	var status C.NTSTATUS
+
+	cpuCount := getCPUCount()
+	var perfSize C.NT_SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION
+
+	performanceInformation := make([]C.NT_SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION, cpuCount)
+	sizeofPerformanceInformation := C.ULONG(unsafe.Sizeof(perfSize)) * C.ULONG(cpuCount)
+
+	status = C.NtQuerySystemInformation(C.SystemProcessorPerformanceInformation,
+		(C.PVOID)(&performanceInformation[0]), sizeofPerformanceInformation, nil)
+
+	if status != C.STATUS_SUCCESS {
+		return fmt.Errorf("NtQuerySystemInformation failed with error :%d", status)
+	}
+	list := make([]Cpu, cpuCount)
+
+	for i := uint64(0); i < cpuCount; i++ {
+		cpu := Cpu{}
+		parseCpuStat(&cpu, performanceInformation[i])
+		list[i] = cpu
+	}
+	self.List = list
+
 	return nil
 }
 
