@@ -20,6 +20,7 @@ var (
 	modpsapi    = syscall.NewLazyDLL("psapi.dll")
 	modkernel32 = syscall.NewLazyDLL("kernel32.dll")
 
+	procGetSystemTimes           = modpsapi.NewProc("GetSystemTimes")
 	procEnumProcesses            = modpsapi.NewProc("EnumProcesses")
 	procGetProcessMemoryInfo     = modpsapi.NewProc("GetProcessMemoryInfo")
 	procGetProcessTimes          = modkernel32.NewProc("GetProcessTimes")
@@ -107,8 +108,11 @@ func (self *Cpu) Get() error {
 
 	var lpIdleTime, lpKernelTime, lpUserTime C.FILETIME
 
-	succeeded := C.GetSystemTimes(&lpIdleTime, &lpKernelTime, &lpUserTime)
-	if succeeded == C.FALSE {
+	ret, _, _ := procGetSystemTimes.Call(
+		uintptr(unsafe.Pointer(&lpIdleTime)),
+		uintptr(unsafe.Pointer(&lpKernelTime)),
+		uintptr(unsafe.Pointer(&lpUserTime)))
+	if ret == 0 {
 		return syscall.GetLastError()
 	}
 
