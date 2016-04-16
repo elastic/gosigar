@@ -66,7 +66,7 @@ func TestLinuxProcState(t *testing.T) {
 
 			state := sigar.ProcState{}
 			if assert.NoError(t, state.Get(pid)) {
-				assert.Equal(t, n, state.Name)				
+				assert.Equal(t, n, state.Name)
 				assert.Equal(t, 2, state.Pgid)
 				assert.Equal(t, strconv.Itoa(uid), state.Username)
 			}

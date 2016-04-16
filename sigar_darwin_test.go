@@ -2,12 +2,12 @@ package gosigar_test
 
 import (
 	// "fmt"
+	"bufio"
+	"bytes"
 	"os/exec"
 	"strconv"
-	"testing"
-	"bytes"
-	"bufio"
 	"strings"
+	"testing"
 
 	sigar "github.com/elastic/gosigar"
 	"github.com/stretchr/testify/assert"
@@ -16,20 +16,20 @@ import (
 var procinfo map[string]string
 
 func setUp(t testing.TB) {
-	out,err := exec.Command("/bin/ps","-p1", "-c","-opid,comm,stat,ppid,pgid,tty,pri,ni").Output()
+	out, err := exec.Command("/bin/ps", "-p1", "-c", "-opid,comm,stat,ppid,pgid,tty,pri,ni").Output()
 	if err != nil {
 		t.Fatal(err)
 	}
 	rdr := bufio.NewReader(bytes.NewReader(out))
-	_,err = rdr.ReadString('\n') // skip header
+	_, err = rdr.ReadString('\n') // skip header
 	if err != nil {
 		t.Fatal(err)
 	}
-	data,err := rdr.ReadString('\n')
+	data, err := rdr.ReadString('\n')
 	if err != nil {
 		t.Fatal(err)
 	}
-	procinfo = make(map[string]string,8)
+	procinfo = make(map[string]string, 8)
 	fields := strings.Fields(data)
 	procinfo["pid"] = fields[0]
 	procinfo["name"] = fields[1]
@@ -52,8 +52,8 @@ func TestDarwinProcState(t *testing.T) {
 	state := sigar.ProcState{}
 	if assert.NoError(t, state.Get(1)) {
 
-		ppid,_ := strconv.Atoi(procinfo["ppid"])
-		pgid,_ := strconv.Atoi(procinfo["pgid"])
+		ppid, _ := strconv.Atoi(procinfo["ppid"])
+		pgid, _ := strconv.Atoi(procinfo["pgid"])
 
 		assert.Equal(t, procinfo["name"], state.Name)
 		assert.Equal(t, ppid, state.Ppid)
@@ -62,5 +62,3 @@ func TestDarwinProcState(t *testing.T) {
 		assert.Equal(t, 0, state.Ppid)
 	}
 }
-
-
