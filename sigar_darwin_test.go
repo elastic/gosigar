@@ -1,10 +1,11 @@
 package gosigar_test
 
 import (
-	// "fmt"
 	"bufio"
 	"bytes"
+	"fmt"
 	"os/exec"
+	"os/user"
 	"strconv"
 	"strings"
 	"testing"
@@ -45,20 +46,31 @@ func setUp(t testing.TB) {
 func tearDown(t testing.TB) {
 }
 
+/* ProcState.Get() call task_info, which on Mac OS X requires root
+   or a signed executable. Skip the test if not running as root
+   to accommodate automated tests, but let users test locally using
+   `sudo -E go test`
+*/
+
 func TestDarwinProcState(t *testing.T) {
 	setUp(t)
 	defer tearDown(t)
 
 	state := sigar.ProcState{}
-	if assert.NoError(t, state.Get(1)) {
+	usr, err := user.Current()
+	if err == nil && usr.Username == "root" {
+		if assert.NoError(t, state.Get(1)) {
 
-		ppid, _ := strconv.Atoi(procinfo["ppid"])
-		pgid, _ := strconv.Atoi(procinfo["pgid"])
+			ppid, _ := strconv.Atoi(procinfo["ppid"])
+			pgid, _ := strconv.Atoi(procinfo["pgid"])
 
-		assert.Equal(t, procinfo["name"], state.Name)
-		assert.Equal(t, ppid, state.Ppid)
-		assert.Equal(t, pgid, state.Pgid)
-		assert.Equal(t, 1, state.Pgid)
-		assert.Equal(t, 0, state.Ppid)
+			assert.Equal(t, procinfo["name"], state.Name)
+			assert.Equal(t, ppid, state.Ppid)
+			assert.Equal(t, pgid, state.Pgid)
+			assert.Equal(t, 1, state.Pgid)
+			assert.Equal(t, 0, state.Ppid)
+		}
+	} else {
+		fmt.Println("Skipping ProcState test; run as root to test")
 	}
 }
