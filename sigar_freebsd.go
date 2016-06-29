@@ -3,9 +3,6 @@
 package gosigar
 
 import (
-	"bufio"
-	"bytes"
-	"io"
 	"io/ioutil"
 	"strconv"
 	"strings"
@@ -104,27 +101,6 @@ func parseCpuStat(self *Cpu, line string) error {
 	self.Nice, _ = strtoull(fields[2])
 	self.Sys, _ = strtoull(fields[3])
 	self.Idle, _ = strtoull(fields[4])
-	return nil
-}
-
-func readFile(file string, handler func(string) bool) error {
-	contents, err := ioutil.ReadFile(file)
-	if err != nil {
-		return err
-	}
-
-	reader := bufio.NewReader(bytes.NewBuffer(contents))
-
-	for {
-		line, _, err := reader.ReadLine()
-		if err == io.EOF {
-			break
-		}
-		if !handler(string(line)) {
-			break
-		}
-	}
-
 	return nil
 }
 
