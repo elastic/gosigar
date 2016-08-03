@@ -17,11 +17,6 @@ var (
 	ErrInvalidFormat = errors.New("error invalid key/value format")
 )
 
-// SubsystemInfo contains fields common to all cgroup subsystems.
-type SubsystemInfo struct {
-	Path string `json:"path,omitempty"`
-}
-
 // Parses a cgroup param and returns the key name and value.
 func parseCgroupParamKeyValue(t string) (string, uint64, error) {
 	parts := strings.Fields(t)

@@ -6,10 +6,25 @@ import (
 
 // Stats contains metrics and limits from each of the cgroup subsystems.
 type Stats struct {
+	Metadata
 	CPU           *CPUSubsystem           `json:"cpu"`
 	CPUAccounting *CPUAccountingSubsystem `json:"cpuacct"`
 	Memory        *MemorySubsystem        `json:"memory"`
 	BlockIO       *BlockIOSubsystem       `json:"blkio"`
+}
+
+// Metadata contains metadata associated with cgroup stats.
+type Metadata struct {
+	ID   string `json:"id,omitempty"`   // ID of the cgroup.
+	Path string `json:"path,omitempty"` // Path to the cgroup relative to the cgroup subsystem's mountpoint.
+}
+
+type mount struct {
+	subsystem  string // Subsystem name (e.g. cpuacct).
+	mountpoint string // Mountpoint of the subsystem (e.g. /cgroup/cpuacct).
+	path       string // Relative path to the cgroup (e.g. /docker/<id>).
+	id         string // ID of the cgroup.
+	fullPath   string // Absolute path to the cgroup. It's the mountpoint joined with the path.
 }
 
 // Reader reads cgroup metrics and limits.
@@ -55,7 +70,7 @@ func (r *Reader) GetStatsForProcess(pid int) (*Stats, error) {
 	}
 
 	// Build the full path for the subsystems we are interested in.
-	cgroupsPaths := map[string]string{}
+	mounts := map[string]mount{}
 	for _, interestedSubsystem := range []string{"blkio", "cpu", "cpuacct", "memory"} {
 		path, found := paths[interestedSubsystem]
 		if !found {
@@ -71,38 +86,53 @@ func (r *Reader) GetStatsForProcess(pid int) (*Stats, error) {
 			continue
 		}
 
-		cgroupsPaths[interestedSubsystem] = filepath.Join(r.rootfsMountpoint, subsystemMount, path)
+		mounts[interestedSubsystem] = mount{
+			subsystem:  interestedSubsystem,
+			mountpoint: filepath.Join(r.rootfsMountpoint, subsystemMount),
+			path:       path,
+			id:         filepath.Base(path),
+			fullPath:   filepath.Join(r.rootfsMountpoint, subsystemMount, path),
+		}
 	}
 
+	stats := Stats{Metadata: getCommonCgroupMetadata(mounts)}
+
 	// Collect stats from each cgroup subsystem associated with the task.
-	stats := Stats{}
-	if path, found := cgroupsPaths["blkio"]; found {
+	if mount, found := mounts["blkio"]; found {
 		stats.BlockIO = &BlockIOSubsystem{}
-		err := stats.BlockIO.Get(path)
+		err := stats.BlockIO.get(mount.fullPath)
 		if err != nil {
 			return nil, err
 		}
+		stats.BlockIO.Metadata.ID = mount.id
+		stats.BlockIO.Metadata.Path = mount.path
 	}
-	if path, found := cgroupsPaths["cpu"]; found {
+	if mount, found := mounts["cpu"]; found {
 		stats.CPU = &CPUSubsystem{}
-		err := stats.CPU.Get(path)
+		err := stats.CPU.get(mount.fullPath)
 		if err != nil {
 			return nil, err
 		}
+		stats.CPU.Metadata.ID = mount.id
+		stats.CPU.Metadata.Path = mount.path
 	}
-	if path, found := cgroupsPaths["cpuacct"]; found {
+	if mount, found := mounts["cpuacct"]; found {
 		stats.CPUAccounting = &CPUAccountingSubsystem{}
-		err := stats.CPUAccounting.Get(path)
+		err := stats.CPUAccounting.get(mount.fullPath)
 		if err != nil {
 			return nil, err
 		}
+		stats.CPUAccounting.Metadata.ID = mount.id
+		stats.CPUAccounting.Metadata.Path = mount.path
 	}
-	if path, found := cgroupsPaths["memory"]; found {
+	if mount, found := mounts["memory"]; found {
 		stats.Memory = &MemorySubsystem{}
-		err := stats.Memory.Get(path)
+		err := stats.Memory.get(mount.fullPath)
 		if err != nil {
 			return nil, err
 		}
+		stats.Memory.Metadata.ID = mount.id
+		stats.Memory.Metadata.Path = mount.path
 	}
 
 	// Return nil if no metrics were collected.
@@ -111,4 +141,22 @@ func (r *Reader) GetStatsForProcess(pid int) (*Stats, error) {
 	}
 
 	return &stats, nil
+}
+
+// getCommonCgroupMetadata returns Metadata containing the cgroup path and ID
+// iff all subsystems share a common path and ID. This is common for
+// containerized processes. If there is no common path and ID then the returned
+// values are empty strings.
+func getCommonCgroupMetadata(mounts map[string]mount) Metadata {
+	var path string
+	for _, m := range mounts {
+		if path == "" {
+			path = m.path
+		} else if path != m.path {
+			// All paths are not the same.
+			return Metadata{}
+		}
+	}
+
+	return Metadata{Path: path, ID: filepath.Base(path)}
 }

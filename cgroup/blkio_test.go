@@ -68,17 +68,16 @@ func TestBlkioThrottle(t *testing.T) {
 
 func TestBlockIOSubsystemGet(t *testing.T) {
 	blkio := BlockIOSubsystem{}
-	if err := blkio.Get(blkioPath); err != nil {
+	if err := blkio.get(blkioPath); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, blkioPath, blkio.Path)
 	assert.True(t, len(blkio.Throttle.Devices) > 0)
 }
 
 func TestBlockIOSubsystemJSON(t *testing.T) {
 	blkio := BlockIOSubsystem{}
-	if err := blkio.Get(blkioPath); err != nil {
+	if err := blkio.get(blkioPath); err != nil {
 		t.Fatal(err)
 	}
 

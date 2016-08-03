@@ -83,11 +83,10 @@ func TestMemoryDataKernelTCP(t *testing.T) {
 
 func TestMemorySubsystemGet(t *testing.T) {
 	mem := MemorySubsystem{}
-	if err := mem.Get(memoryPath); err != nil {
+	if err := mem.get(memoryPath); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, memoryPath, mem.Path)
 	assert.Equal(t, uint64(65101824), mem.Stats.Cache)
 	assert.Equal(t, uint64(295997440), mem.Mem.Usage)
 	assert.Equal(t, uint64(295997440), mem.MemSwap.Usage)
@@ -97,7 +96,7 @@ func TestMemorySubsystemGet(t *testing.T) {
 
 func TestMemorySubsystemJSON(t *testing.T) {
 	mem := MemorySubsystem{}
-	if err := mem.Get(memoryPath); err != nil {
+	if err := mem.get(memoryPath); err != nil {
 		t.Fatal(err)
 	}
 

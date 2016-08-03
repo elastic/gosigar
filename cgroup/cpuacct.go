@@ -15,7 +15,7 @@ var clockTicks = uint64(util.GetClockTicks())
 
 // CPUAccountingSubsystem contains metrics from the "cpuacct" subsystem.
 type CPUAccountingSubsystem struct {
-	SubsystemInfo
+	Metadata
 	TotalNanos  uint64   `json:"total_nanos"`
 	UsagePerCPU []uint64 `json:"usage_percpu_nanos"`
 	// CPU time statistics for tasks in this cgroup.
@@ -28,11 +28,9 @@ type CPUAccountingStats struct {
 	SystemNanos uint64 `json:"system_nanos"`
 }
 
-// Get reads metrics from the "cpuacct" subsystem. path is the filepath to the
+// get reads metrics from the "cpuacct" subsystem. path is the filepath to the
 // cgroup hierarchy to read.
-func (cpuacct *CPUAccountingSubsystem) Get(path string) error {
-	cpuacct.Path = path
-
+func (cpuacct *CPUAccountingSubsystem) get(path string) error {
 	if err := cpuacctStat(path, cpuacct); err != nil {
 		return err
 	}

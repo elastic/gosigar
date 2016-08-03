@@ -39,11 +39,10 @@ func TestCpuacctUsagePerCPU(t *testing.T) {
 
 func TestCPUAccountingSubsystem_Get(t *testing.T) {
 	cpuacct := CPUAccountingSubsystem{}
-	if err := cpuacct.Get(cpuacctPath); err != nil {
+	if err := cpuacct.get(cpuacctPath); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, cpuacctPath, cpuacct.Path)
 	assert.Equal(t, uint64(61950000000), cpuacct.Stats.UserNanos)
 	assert.Equal(t, uint64(95996653175), cpuacct.TotalNanos)
 	assert.Len(t, cpuacct.UsagePerCPU, 4)
@@ -51,7 +50,7 @@ func TestCPUAccountingSubsystem_Get(t *testing.T) {
 
 func TestCPUAccountingSubsystemJSON(t *testing.T) {
 	cpuacct := CPUAccountingSubsystem{}
-	if err := cpuacct.Get(cpuacctPath); err != nil {
+	if err := cpuacct.get(cpuacctPath); err != nil {
 		t.Fatal(err)
 	}
 

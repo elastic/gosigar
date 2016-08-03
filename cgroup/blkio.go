@@ -15,7 +15,7 @@ import (
 //
 // https://www.kernel.org/doc/Documentation/cgroup-v1/blkio-controller.txt
 type BlockIOSubsystem struct {
-	SubsystemInfo
+	Metadata
 	Throttle ThrottlePolicy `json:"throttle,omitempty"` // Throttle limits for upper IO rates and metrics.
 	//CFQ      CFQScheduler   `json:"cfq,omitempty"`      // Completely fair queue scheduler limits and metrics.
 }
@@ -90,11 +90,9 @@ type blkioValue struct {
 	Value     uint64
 }
 
-// Get reads metrics from the "blkio" subsystem. path is the filepath to the
+// get reads metrics from the "blkio" subsystem. path is the filepath to the
 // cgroup hierarchy to read.
-func (blkio *BlockIOSubsystem) Get(path string) error {
-	blkio.Path = path
-
+func (blkio *BlockIOSubsystem) get(path string) error {
 	if err := blkioThrottle(path, blkio); err != nil {
 		return err
 	}

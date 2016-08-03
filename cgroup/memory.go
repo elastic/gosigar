@@ -8,7 +8,7 @@ import (
 
 // MemorySubsystem contains the metrics and limits from the "memory" subsystem.
 type MemorySubsystem struct {
-	SubsystemInfo
+	Metadata
 	Mem       MemoryData `json:"mem"`      // Memory usage by tasks in this cgroup.
 	MemSwap   MemoryData `json:"memsw"`    // Memory plus swap usage by tasks in this cgroup.
 	Kernel    MemoryData `json:"kmem"`     // Kernel memory used by tasks in this cgroup.
@@ -61,11 +61,9 @@ type MemoryStat struct {
 	HierarchicalMemswLimit uint64 `json:"hierarchical_memsw_limit"`
 }
 
-// Get reads metrics from the "memory" subsystem. path is the filepath to the
+// get reads metrics from the "memory" subsystem. path is the filepath to the
 // cgroup hierarchy to read.
-func (mem *MemorySubsystem) Get(path string) error {
-	mem.Path = path
-
+func (mem *MemorySubsystem) get(path string) error {
 	if err := memoryData(path, "memory", &mem.Mem); err != nil {
 		return err
 	}

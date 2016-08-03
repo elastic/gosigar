@@ -11,7 +11,7 @@ import (
 // when the system is busy. This subsystem does not track CPU usage, for that
 // information see the "cpuacct" subsystem.
 type CPUSubsystem struct {
-	SubsystemInfo
+	Metadata
 	// Completely Fair Scheduler (CFS) settings.
 	CFS CFS `json:"cfs,omitempty"`
 	// Real-time (RT) Scheduler settings.
@@ -54,11 +54,9 @@ type ThrottleStats struct {
 	ThrottledTimeNanos uint64 `json:"throttled_nanos,omitempty"`
 }
 
-// Get reads metrics from the "cpu" subsystem. path is the filepath to the
+// get reads metrics from the "cpu" subsystem. path is the filepath to the
 // cgroup hierarchy to read.
-func (cpu *CPUSubsystem) Get(path string) error {
-	cpu.Path = path
-
+func (cpu *CPUSubsystem) get(path string) error {
 	if err := cpuCFS(path, cpu); err != nil {
 		return err
 	}

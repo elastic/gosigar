@@ -43,11 +43,10 @@ func TestCpuRT(t *testing.T) {
 
 func TestCpuSubsystemGet(t *testing.T) {
 	cpu := CPUSubsystem{}
-	if err := cpu.Get(cpuPath); err != nil {
+	if err := cpu.get(cpuPath); err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, cpuPath, cpu.Path)
 	assert.Equal(t, uint64(769021), cpu.Stats.Periods)
 	assert.Equal(t, uint64(100000), cpu.CFS.PeriodMicros)
 	assert.Equal(t, uint64(1000000), cpu.RT.PeriodMicros)
@@ -55,7 +54,7 @@ func TestCpuSubsystemGet(t *testing.T) {
 
 func TestCpuSubsystemJSON(t *testing.T) {
 	cpu := CPUSubsystem{}
-	if err := cpu.Get(cpuPath); err != nil {
+	if err := cpu.get(cpuPath); err != nil {
 		t.Fatal(err)
 	}
 
