@@ -160,3 +160,23 @@ func assertContains(t testing.TB, m map[string]struct{}, key string) {
 		t.Errorf("map is missing key %v, map=%+v", key, m)
 	}
 }
+
+func TestParseMountinfoLine(t *testing.T) {
+	lines := []string{
+		"30 24 0:25 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime - cgroup cgroup rw,blkio",
+		"30 24 0:25 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:13 - cgroup cgroup rw,blkio",
+		"30 24 0:25 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:13 master:1 - cgroup cgroup rw,blkio",
+		"30 24 0:25 / /sys/fs/cgroup/blkio rw,nosuid,nodev,noexec,relatime shared:13 - cgroup cgroup rw,name=blkio",
+	}
+
+	for _, line := range lines {
+		mount, err := parseMountinfoLine(line)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, "/sys/fs/cgroup/blkio", mount.mountpoint)
+		assert.Equal(t, "cgroup", mount.filesystemType)
+		assert.Len(t, mount.superOptions, 2)
+	}
+}
