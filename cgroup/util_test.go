@@ -123,15 +123,15 @@ func TestSubsystemMountpoints(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Equal(t, "/sys/fs/cgroup/blkio", mountpoints["blkio"])
-	assert.Equal(t, "/sys/fs/cgroup/cpu", mountpoints["cpu"])
-	assert.Equal(t, "/sys/fs/cgroup/cpuacct", mountpoints["cpuacct"])
-	assert.Equal(t, "/sys/fs/cgroup/cpuset", mountpoints["cpuset"])
-	assert.Equal(t, "/sys/fs/cgroup/devices", mountpoints["devices"])
-	assert.Equal(t, "/sys/fs/cgroup/freezer", mountpoints["freezer"])
-	assert.Equal(t, "/sys/fs/cgroup/hugetlb", mountpoints["hugetlb"])
-	assert.Equal(t, "/sys/fs/cgroup/memory", mountpoints["memory"])
-	assert.Equal(t, "/sys/fs/cgroup/perf_event", mountpoints["perf_event"])
+	assert.Equal(t, "testdata/docker/sys/fs/cgroup/blkio", mountpoints["blkio"])
+	assert.Equal(t, "testdata/docker/sys/fs/cgroup/cpu", mountpoints["cpu"])
+	assert.Equal(t, "testdata/docker/sys/fs/cgroup/cpuacct", mountpoints["cpuacct"])
+	assert.Equal(t, "testdata/docker/sys/fs/cgroup/cpuset", mountpoints["cpuset"])
+	assert.Equal(t, "testdata/docker/sys/fs/cgroup/devices", mountpoints["devices"])
+	assert.Equal(t, "testdata/docker/sys/fs/cgroup/freezer", mountpoints["freezer"])
+	assert.Equal(t, "testdata/docker/sys/fs/cgroup/hugetlb", mountpoints["hugetlb"])
+	assert.Equal(t, "testdata/docker/sys/fs/cgroup/memory", mountpoints["memory"])
+	assert.Equal(t, "testdata/docker/sys/fs/cgroup/perf_event", mountpoints["perf_event"])
 }
 
 func TestProcessCgroupPaths(t *testing.T) {

@@ -22,6 +22,9 @@ func TestReaderGetStats(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if stats == nil {
+		t.Fatal("no cgroup stats found")
+	}
 
 	assert.Equal(t, id, stats.ID)
 	assert.Equal(t, id, stats.BlockIO.ID)
