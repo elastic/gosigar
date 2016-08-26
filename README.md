@@ -30,7 +30,7 @@ The features vary by operating system.
 | Mem             |   X   |    X   |    X    |    X    |    X    |
 | ProcArgs        |   X   |    X   |    X    |         |    X    |
 | ProcExe         |   X   |    X   |         |         |    X    |
-| ProcFDUsage     |   X   |        |         |         |    X    |
+| ProcFDUsage     |   X   |        |         |         |         |
 | ProcList        |   X   |    X   |    X    |         |    X    |
 | ProcMem         |   X   |    X   |    X    |         |    X    |
 | ProcState       |   X   |    X   |    X    |         |    X    |
