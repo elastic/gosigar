@@ -3,7 +3,8 @@
 package gosigar
 
 import (
-	"runtime"
+	"io/ioutil"
+	"strconv"
 	"strings"
 	"unsafe"
 )
@@ -71,7 +72,26 @@ func (self *FDUsage) Get() error {
 }
 
 func (self *ProcFDUsage) Get(pid int) error {
-	return ErrNotImplemented{runtime.GOOS}
+	err := readFile("/proc/"+strconv.Itoa(pid)+"/rlimit", func(line string) bool {
+		if strings.HasPrefix(line, "nofile") {
+			fields := strings.Fields(line)
+			if len(fields) == 3 {
+				self.SoftLimit, _ = strconv.ParseUint(fields[1], 10, 64)
+				self.HardLimit, _ = strconv.ParseUint(fields[2], 10, 64)
+			}
+			return false
+		}
+		return true
+	})
+	if err != nil {
+		return err
+	}
+	fds, err := ioutil.ReadDir(procFileName(pid, "fd"))
+	if err != nil {
+		return err
+	}
+	self.Open = uint64(len(fds))
+	return nil
 }
 
 func parseCpuStat(self *Cpu, line string) error {
