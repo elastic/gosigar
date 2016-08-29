@@ -30,13 +30,26 @@ The features vary by operating system.
 | Mem             |   X   |    X   |    X    |    X    |    X    |
 | ProcArgs        |   X   |    X   |    X    |         |    X    |
 | ProcExe         |   X   |    X   |         |         |    X    |
-| ProcFDUsage     |   X   |        |         |         |         |
+| ProcFDUsage     |   X   |        |         |         |    X    |
 | ProcList        |   X   |    X   |    X    |         |    X    |
 | ProcMem         |   X   |    X   |    X    |         |    X    |
 | ProcState       |   X   |    X   |    X    |         |    X    |
 | ProcTime        |   X   |    X   |    X    |         |    X    |
 | Swap            |   X   |    X   |         |    X    |    X    |
 | Uptime          |   X   |    X   |         |    X    |    X    |
+
+## OS Specific Notes
+
+### FreeBSD
+
+Mount both `linprocfs` and `procfs` for compatability. Consider adding these
+mounts to your `/etc/fstab` file so they are mounted automatically at boot.
+
+```
+sudo mount -t procfs proc /proc
+sudo mkdir -p /compat/linux/proc
+sudo mount -t linprocfs /dev/null /compat/linux/proc
+```
 
 ## License
 

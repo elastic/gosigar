@@ -86,11 +86,14 @@ func (self *ProcFDUsage) Get(pid int) error {
 	if err != nil {
 		return err
 	}
+
+	// linprocfs only provides this information for this process (self).
 	fds, err := ioutil.ReadDir(procFileName(pid, "fd"))
 	if err != nil {
 		return err
 	}
 	self.Open = uint64(len(fds))
+
 	return nil
 }
 
