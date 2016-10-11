@@ -361,11 +361,11 @@ func kern_procargs(pid int,
 	binary.Read(bbuf, binary.LittleEndian, &argc)
 
 	path, err := bbuf.ReadBytes(0)
-	if exe != nil {
-		exe(string(chop(path)))
-	}
 	if err != nil {
 		return fmt.Errorf("Error reading the argv[0]: %v", err)
+	}
+	if exe != nil {
+		exe(string(chop(path)))
 	}
 
 	// skip trailing \0's
