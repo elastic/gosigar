@@ -102,9 +102,8 @@ func (self *Mem) Get() error {
 	self.Total = uint64(statex.ullTotalPhys)
 	self.Free = uint64(statex.ullAvailPhys)
 	self.Used = self.Total - self.Free
-	vtotal := uint64(statex.ullTotalVirtual)
-	self.ActualFree = uint64(statex.ullAvailVirtual)
-	self.ActualUsed = vtotal - self.ActualFree
+	self.ActualFree = self.Free
+	self.ActualUsed = self.Used
 
 	return nil
 }
