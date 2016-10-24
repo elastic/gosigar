@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	. "github.com/elastic/gosigar"
 	"github.com/stretchr/testify/assert"
@@ -111,10 +112,14 @@ func TestProcMem(t *testing.T) {
 }
 
 func TestProcTime(t *testing.T) {
-	time := ProcTime{}
-	assert.NoError(t, time.Get(os.Getppid()))
+	procTime := ProcTime{}
+	if assert.NoError(t, procTime.Get(os.Getppid())) {
+		// Sanity check the start time of the "go test" process.
+		delta := time.Now().Sub(time.Unix(0, int64(procTime.StartTime*uint64(time.Millisecond))))
+		assert.True(t, delta > 0 && delta < 2*time.Minute, "ProcTime.StartTime differs by %v", delta)
+	}
 
-	assert.Error(t, time.Get(invalidPid))
+	assert.Error(t, procTime.Get(invalidPid))
 }
 
 func TestProcArgs(t *testing.T) {
