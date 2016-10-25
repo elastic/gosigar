@@ -6,8 +6,8 @@ os: Windows Server 2012 R2
 
 # Environment variables
 environment:
-  GOVERSION: 1.6.2
-  GOROOT: c:\go1.6.2
+  GOVERSION: 1.7.3
+  GOROOT: c:\go1.7.3
   GOPATH: c:\gopath
 
 # Custom clone folder (variables are not expanded here).
@@ -17,7 +17,7 @@ clone_folder: c:\gopath\src\github.com\elastic\gosigar
 cache:
 - C:\ProgramData\chocolatey\bin -> .appveyor.yml
 - C:\ProgramData\chocolatey\lib -> .appveyor.yml
-- C:\go1.6.2 -> .appveyor.yml
+- C:\go1.7.3 -> .appveyor.yml
 - C:\tools\mingw64 -> .appveyor.yml
 
 # Scripts that run after cloning repository
@@ -35,13 +35,14 @@ install:
   - go version
   - go env
   - python --version
+  - go get github.com/elastic/beats/vendor/github.com/pierrre/gotestcover
 
 # To run your custom scripts instead of automatic MSBuild
 build_script:
   # Compile
   - appveyor AddCompilationMessage "Starting Compile"
   - cd c:\gopath\src\github.com\elastic\gosigar
-  - go get -t
+  - go get -v -t -d ./...
   - go build
   - go build -o examples/df/df.exe ./examples/df
   - go build -o examples/free/free.exe ./examples/free
@@ -54,7 +55,7 @@ test_script:
   # Unit tests
   - ps: Add-AppveyorTest "Unit Tests" -Outcome Running
   - mkdir build\coverage
-  - go test -cover -coverprofile=build\coverage\unit.cov -coverpkg=github.com/elastic/gosigar -v .
+  - gotestcover -v -coverprofile=build/coverage/unit.cov github.com/elastic/gosigar/...
   - ps: Update-AppveyorTest "Unit Tests" -Outcome Passed
   - ps: Add-AppveyorTest "Running Examples" -Outcome Running
   - .\examples\df\df.exe

@@ -5,7 +5,7 @@ os:
   - osx
 
 go:
-  - 1.6.2
+  - 1.7.3
 
 env:
   global:
@@ -21,14 +21,15 @@ before_install:
   - cd $HOME/gopath/src/${PROJ}
 
 install:
-  - go get -v -t -d
+  - go get -v -t -d ./...
+  - go get github.com/elastic/beats/vendor/github.com/pierrre/gotestcover
 
 script:
   - gofmt -l . | read && echo "Code differs from gofmt's style. Run 'gofmt -w .'" 1>&2 && exit 1 || true
   - go vet
   - go build
   - mkdir -p build/coverage
-  - go test -cover -coverprofile=build/coverage/unit.cov -coverpkg=github.com/elastic/gosigar -v .
+  - gotestcover -v -coverprofile=build/coverage/unit.cov github.com/elastic/gosigar/...
   - for i in $(ls examples); do go build -o examples/$i/$i ./examples/$i; ./examples/$i/$i; done
 
 after_success:
