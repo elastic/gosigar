@@ -21,11 +21,10 @@ func TestCpu(t *testing.T) {
 
 func TestLoadAverage(t *testing.T) {
 	avg := LoadAverage{}
-	assert.NoError(t, avg.Get())
+	assert.NoError(t, skipNotImplemented(t, avg.Get(), "windows"))
 }
 
 func TestUptime(t *testing.T) {
-	skipWindows(t)
 	uptime := Uptime{}
 	if assert.NoError(t, uptime.Get()) {
 		assert.True(t, uptime.Length > 0, "Uptime (%f) must be positive", uptime.Length)
@@ -52,10 +51,9 @@ func TestSwap(t *testing.T) {
 }
 
 func TestCpuList(t *testing.T) {
-	skipWindows(t)
-	cpulist := CpuList{}
-	if assert.NoError(t, cpulist.Get()) {
-		numCore := len(cpulist.List)
+	cpuList := CpuList{}
+	if assert.NoError(t, cpuList.Get()) {
+		numCore := len(cpuList.List)
 		numCpu := runtime.NumCPU()
 		assert.True(t, numCore >= numCpu, "Number of cores (%d) >= number of logical CPUs (%d)",
 			numCore, numCpu)
@@ -63,16 +61,16 @@ func TestCpuList(t *testing.T) {
 }
 
 func TestFileSystemList(t *testing.T) {
-	fslist := FileSystemList{}
-	if assert.NoError(t, fslist.Get()) {
-		assert.True(t, len(fslist.List) > 0)
+	fsList := FileSystemList{}
+	if assert.NoError(t, fsList.Get()) {
+		assert.True(t, len(fsList.List) > 0)
 	}
 }
 
 func TestFileSystemUsage(t *testing.T) {
 	root := "/"
 	if runtime.GOOS == "windows" {
-		root = "C:\\"
+		root = `C:\`
 	}
 	fsusage := FileSystemUsage{}
 	if assert.NoError(t, fsusage.Get(root)) {
@@ -99,6 +97,7 @@ func TestProcState(t *testing.T) {
 		assert.Contains(t, []RunState{RunStateRun, RunStateSleep}, state.State)
 		assert.Regexp(t, "go(.exe)?", state.Name)
 		assert.Equal(t, u.Username, state.Username)
+		assert.True(t, state.Ppid > 0, "ppid=%v is non-positive", state.Ppid)
 	}
 
 	assert.Error(t, state.Get(invalidPid))
@@ -123,23 +122,31 @@ func TestProcTime(t *testing.T) {
 }
 
 func TestProcArgs(t *testing.T) {
-	skipWindows(t)
 	args := ProcArgs{}
 	if assert.NoError(t, args.Get(os.Getppid())) {
-		assert.True(t, len(args.List) >= 2)
+		assert.NotEmpty(t, args.List)
 	}
 }
 
 func TestProcExe(t *testing.T) {
-	skipWindows(t)
 	exe := ProcExe{}
-	if assert.NoError(t, exe.Get(os.Getppid())) {
+	if assert.NoError(t, skipNotImplemented(t, exe.Get(os.Getppid()), "windows")) {
 		assert.Regexp(t, "go(.exe)?", filepath.Base(exe.Name))
 	}
 }
 
-func skipWindows(t testing.TB) {
-	if runtime.GOOS == "windows" {
-		t.Skipf("Skipping test on %s", runtime.GOOS)
+func skipNotImplemented(t testing.TB, err error, goos ...string) error {
+	for _, os := range goos {
+		if runtime.GOOS == os {
+			if err == nil {
+				t.Fatal("expected ErrNotImplemented")
+			} else if IsNotImplemented(err) {
+				t.Skipf("Skipping test on %s", runtime.GOOS)
+			}
+
+			break
+		}
 	}
+
+	return err
 }

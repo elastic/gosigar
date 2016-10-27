@@ -378,3 +378,8 @@ func Process32Next(handle syscall.Handle) (ProcessEntry32, error) {
 //sys   _Process32First(handle syscall.Handle, processEntry32 *ProcessEntry32) (err error) = kernel32.Process32FirstW
 //sys   _Process32Next(handle syscall.Handle, processEntry32 *ProcessEntry32) (err error) = kernel32.Process32NextW
 //sys   _CreateToolhelp32Snapshot(flags uint32, processID uint32) (handle syscall.Handle, err error) = kernel32.CreateToolhelp32Snapshot
+//sys   _NtQuerySystemInformation(systemInformationClass uint32, systemInformation *byte, systemInformationLength uint32, returnLength *uint32) (ntstatus uint32, err error) = ntdll.NtQuerySystemInformation
+//sys   _NtQueryInformationProcess(processHandle syscall.Handle, processInformationClass uint32, processInformation *byte, processInformationLength uint32, returnLength *uint32) (ntstatus uint32, err error) = ntdll.NtQueryInformationProcess
+//sys   _LookupPrivilegeName(systemName string, luid *int64, buffer *uint16, size *uint32) (err error) = advapi32.LookupPrivilegeNameW
+//sys   _LookupPrivilegeValue(systemName string, name string, luid *int64) (err error) = advapi32.LookupPrivilegeValueW
+//sys   _AdjustTokenPrivileges(token syscall.Token, releaseAll bool, input *byte, outputSize uint32, output *byte, requiredSize *uint32) (success bool, err error) [true] = advapi32.AdjustTokenPrivileges

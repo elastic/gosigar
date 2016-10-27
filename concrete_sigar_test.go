@@ -35,6 +35,7 @@ func TestConcreteCollectCpuStats(t *testing.T) {
 func TestConcreteGetLoadAverage(t *testing.T) {
 	concreteSigar := &sigar.ConcreteSigar{}
 	avg, err := concreteSigar.GetLoadAverage()
+	skipNotImplemented(t, err, "windows")
 	if assert.NoError(t, err) {
 		assert.NotNil(t, avg.One)
 		assert.NotNil(t, avg.Five)
@@ -78,10 +79,7 @@ func TestConcreteFileSystemUsage(t *testing.T) {
 func TestConcreteGetFDUsage(t *testing.T) {
 	concreteSigar := &sigar.ConcreteSigar{}
 	fdUsage, err := concreteSigar.GetFDUsage()
-	// if it's not implemented, don't test
-	if _, ok := err.(sigar.ErrNotImplemented); ok {
-		t.Skipf("Skipping *ConcreteSigar.GetFDUsage test because it is not implemented for " + runtime.GOOS)
-	}
+	skipNotImplemented(t, err, "windows", "darwin")
 	if assert.NoError(t, err) {
 		assert.True(t, fdUsage.Open > 0)
 		assert.True(t, fdUsage.Open <= fdUsage.Max)
