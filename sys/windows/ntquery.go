@@ -3,6 +3,9 @@
 package windows
 
 import (
+	"bytes"
+	"encoding/binary"
+	"io"
 	"runtime"
 	"syscall"
 	"time"
@@ -10,6 +13,10 @@ import (
 
 	"github.com/pkg/errors"
 )
+
+// On both 32-bit and 64-bit systems NtQuerySystemInformation expects the
+// size of SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION to be 48.
+const sizeofSystemProcessorPerformanceInformation = 48
 
 // ProcessBasicInformation is an equivalent representation of
 // PROCESS_BASIC_INFORMATION in the Windows API.
@@ -33,7 +40,7 @@ func NtQueryProcessBasicInformation(handle syscall.Handle) (ProcessBasicInformat
 	size := uint32(unsafe.Sizeof(processBasicInfo))
 	ntStatus, _ := _NtQueryInformationProcess(handle, 0, processBasicInfoPtr, size, nil)
 	if ntStatus != 0 {
-		return ProcessBasicInformation{}, errors.Errorf("NtQueryInformationProcess failed, NTSTATUS=%0x%X", ntStatus)
+		return ProcessBasicInformation{}, errors.Errorf("NtQueryInformationProcess failed, NTSTATUS=0x%X", ntStatus)
 	}
 
 	return processBasicInfo, nil
@@ -73,30 +80,53 @@ func NtQuerySystemProcessorPerformanceInformation() ([]SystemProcessorPerformanc
 	// http://processhacker.sourceforge.net/doc/ntexapi_8h.html#ad5d815b48e8f4da1ef2eb7a2f18a54e0
 	const systemProcessorPerformanceInformation = 8
 
-	// Create an array with one entry for each CPU.
-	numCPU := runtime.NumCPU()
-	cpuPerfInfo := make([]_SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION, numCPU)
-	cpuPerfInfoPtr := (*byte)(unsafe.Pointer(&cpuPerfInfo[0]))
-	size := uint32(unsafe.Sizeof(_SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION{})) * uint32(numCPU)
+	// Create a buffer large enough to hold an entry for each processor.
+	b := make([]byte, runtime.NumCPU()*sizeofSystemProcessorPerformanceInformation)
 
 	// Query the performance information. Note that this function uses 0 to
 	// indicate success. Most other Windows functions use non-zero for success.
-	ntStatus, _ := _NtQuerySystemInformation(systemProcessorPerformanceInformation, cpuPerfInfoPtr, size, nil)
+	var returnLength uint32
+	ntStatus, _ := _NtQuerySystemInformation(systemProcessorPerformanceInformation, &b[0], uint32(len(b)), &returnLength)
 	if ntStatus != STATUS_SUCCESS {
-		return nil, errors.Errorf("NtQuerySystemInformation failed, NTSTATUS=%0x%X", ntStatus)
+		return nil, errors.Errorf("NtQuerySystemInformation failed, NTSTATUS=0x%X, bufLength=%v, returnLength=%v", ntStatus, len(b), returnLength)
 	}
 
-	rtn := make([]SystemProcessorPerformanceInformation, 0, len(cpuPerfInfo))
-	for _, cpu := range cpuPerfInfo {
-		idle := time.Duration(cpu.IdleTime * 100)
-		kernel := time.Duration(cpu.KernelTime * 100)
-		user := time.Duration(cpu.UserTime * 100)
+	return readSystemProcessorPerformanceInformationBuffer(b)
+}
+
+// readSystemProcessorPerformanceInformationBuffer reads from a buffer
+// containing SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION data. The buffer should
+// contain one entry for each CPU.
+// https://msdn.microsoft.com/en-us/library/windows/desktop/ms724509(v=vs.85).aspx
+func readSystemProcessorPerformanceInformationBuffer(b []byte) ([]SystemProcessorPerformanceInformation, error) {
+	n := len(b) / sizeofSystemProcessorPerformanceInformation
+	r := bytes.NewReader(b)
+
+	rtn := make([]SystemProcessorPerformanceInformation, 0, n)
+	for i := 0; i < n; i++ {
+		_, err := r.Seek(int64(i*sizeofSystemProcessorPerformanceInformation), io.SeekStart)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to seek to cpuN=%v in buffer", i)
+		}
+
+		times := make([]uint64, 3)
+		for j := range times {
+			err := binary.Read(r, binary.LittleEndian, &times[j])
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed reading cpu times for cpuN=%v", i)
+			}
+		}
+
+		idleTime := time.Duration(times[0] * 100)
+		kernelTime := time.Duration(times[1] * 100)
+		userTime := time.Duration(times[2] * 100)
 
 		rtn = append(rtn, SystemProcessorPerformanceInformation{
-			IdleTime:   idle,
-			KernelTime: kernel - idle, // Subtract out idle time from kernel time.
-			UserTime:   user,
+			IdleTime:   idleTime,
+			KernelTime: kernelTime - idleTime, // Subtract out idle time from kernel time.
+			UserTime:   userTime,
 		})
 	}
+
 	return rtn, nil
 }

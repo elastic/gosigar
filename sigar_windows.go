@@ -290,7 +290,7 @@ func getProcCredName(pid int) (string, error) {
 	}
 
 	// Look up domain account by SID.
-	account, domain, _, err := tokenUser.User.Sid.LookupAccount("localhost")
+	account, domain, _, err := tokenUser.User.Sid.LookupAccount("")
 	if err != nil {
 		sid, sidErr := tokenUser.User.Sid.String()
 		if sidErr != nil {
