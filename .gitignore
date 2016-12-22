@@ -29,6 +29,8 @@ examples/free/free
 examples/free/free.exe
 examples/ps/ps
 examples/ps/ps.exe
+examples/ss/ss
+examples/ss/ss.exe
 examples/uptime/uptime
 examples/uptime/uptime.exe
 
