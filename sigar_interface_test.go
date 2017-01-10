@@ -128,6 +128,17 @@ func TestProcArgs(t *testing.T) {
 	}
 }
 
+func TestProcEnv(t *testing.T) {
+	env := &ProcEnv{}
+	if assert.NoError(t, skipNotImplemented(t, env.Get(os.Getpid()), "windows", "openbsd")) {
+		assert.True(t, len(env.Vars) > 0, "env is empty")
+
+		for k, v := range env.Vars {
+			assert.Equal(t, os.Getenv(k), v)
+		}
+	}
+}
+
 func TestProcExe(t *testing.T) {
 	exe := ProcExe{}
 	if assert.NoError(t, skipNotImplemented(t, exe.Get(os.Getppid()), "windows")) {
