@@ -5,6 +5,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+## [0.1.0]
+
+### Added
 - Added `CpuList` implementation for Windows that returns CPU timing information
   on a per CPU basis. #55
 - Added `Uptime` implementation for Windows. #55
@@ -21,10 +31,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added OS version checks to `ProcArgs.Get` on Windows because the
   `Win32_Process` WMI query is not available prior to Windows vista. On XP and
   Windows 2003, this method returns `ErrNotImplemented`. #55
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 - Fixed value of `Mem.ActualFree` and `Mem.ActualUsed` on Windows. #49
