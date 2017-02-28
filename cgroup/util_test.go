@@ -91,7 +91,7 @@ func TestSupportedSubsystems(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Len(t, subsystems, 12)
+	assert.Len(t, subsystems, 11)
 	assertContains(t, subsystems, "cpuset")
 	assertContains(t, subsystems, "cpu")
 	assertContains(t, subsystems, "cpuacct")
@@ -102,8 +102,17 @@ func TestSupportedSubsystems(t *testing.T) {
 	assertContains(t, subsystems, "net_cls")
 	assertContains(t, subsystems, "perf_event")
 	assertContains(t, subsystems, "net_prio")
-	assertContains(t, subsystems, "hugetlb")
 	assertContains(t, subsystems, "pids")
+
+	_, found := subsystems["hugetlb"]
+	assert.False(t, found, "hugetlb should be missing because it's disabled")
+}
+
+func TestSupportedSubsystemsErrCgroupsMissing(t *testing.T) {
+	_, err := SupportedSubsystems("testdata/doesnotexist")
+	if err != ErrCgroupsMissing {
+		t.Fatal("expected ErrCgroupsMissing, but got %v", err)
+	}
 }
 
 func TestSubsystemMountpoints(t *testing.T) {

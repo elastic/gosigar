@@ -12,6 +12,16 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Removed
 
+## [0.2.0]
+
+### Added
+- Added `ErrCgroupsMissing` to indicate that /proc/cgroups is missing which is
+  an indicator that cgroups were disabled at compile time. #64
+
+### Changed
+- Changed `cgroup.SupportedSubsystems()` to honor the "enabled" column in the
+  /proc/cgroups file. #64
+
 ## [0.1.0]
 
 ### Added
