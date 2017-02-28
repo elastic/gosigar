@@ -141,13 +141,16 @@ func SupportedSubsystems(rootfsMountpoint string) (map[string]struct{}, error) {
 			continue
 		}
 
+		// Parse the cgroup subsystems.
+		// Format:  subsys_name    hierarchy      num_cgroups    enabled
+		// Example: cpuset         4              1              1
 		fields := strings.Fields(line)
 		if len(fields) == 0 {
 			continue
 		}
 
-		subsystem := fields[0]
-		if len(fields) >= 4 {
+		// Check the enabled flag.
+		if len(fields) > 3 {
 			enabled := fields[3]
 			if enabled == "0" {
 				// Ignore cgroup subsystems that are disabled (via the
@@ -155,6 +158,8 @@ func SupportedSubsystems(rootfsMountpoint string) (map[string]struct{}, error) {
 				continue
 			}
 		}
+
+		subsystem := fields[0]
 		subsystemSet[subsystem] = struct{}{}
 	}
 
