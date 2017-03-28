@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `AuditClient` for communicating to the Linux kernel's audit interface
+  via netlink. #66
 
 ### Changed
 

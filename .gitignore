@@ -6,6 +6,7 @@
 # Files
 .DS_Store
 /*.iml
+*.h
 
 # Editor swap files
 *.swp
@@ -23,6 +24,8 @@
 *.swp
 
 # Example binaries
+examples/audit/audit
+examples/audit/audit.exe
 examples/df/df
 examples/df/df.exe
 examples/free/free
