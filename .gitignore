@@ -26,6 +26,8 @@
 # Example binaries
 examples/audit/audit
 examples/audit/audit.exe
+examples/auparse/auparse
+examples/auparse/auparse.exe
 examples/df/df
 examples/df/df.exe
 examples/free/free

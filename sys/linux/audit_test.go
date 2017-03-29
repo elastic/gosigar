@@ -76,3 +76,12 @@ func TestAuditClientSetPID(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestAuditStatusMask(t *testing.T) {
+	assert.EqualValues(t, 0x0001, AuditStatusEnabled)
+	assert.EqualValues(t, 0x0002, AuditStatusFailure)
+	assert.EqualValues(t, 0x0004, AuditStatusPID)
+	assert.EqualValues(t, 0x0008, AuditStatusRateLimit)
+	assert.EqualValues(t, 0x00010, AuditStatusBacklogLimit)
+	assert.EqualValues(t, 0x00020, AuditStatusBacklogWaitTime)
+}

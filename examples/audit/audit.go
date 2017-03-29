@@ -1,3 +1,17 @@
+// Copyright 2017 Elasticsearch Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // +build linux
 
 package main
@@ -11,15 +25,17 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/elastic/gosigar/sys/linux"
 	"github.com/pkg/errors"
+
+	"github.com/elastic/gosigar/sys/linux"
+	"github.com/elastic/gosigar/sys/linux/auparse"
 )
 
 var (
 	fs     = flag.NewFlagSet("audit", flag.ExitOnError)
 	debug  = fs.Bool("d", false, "enable debug output to stderr")
 	diag   = fs.String("diag", "", "dump raw information from kernel to file")
-	pretty = fs.Bool("pretty", false, "pretty print json output")
+	format = fs.String("format", "", "output format, possible values - json")
 )
 
 func enableLogger() {
@@ -73,36 +89,46 @@ func read() error {
 	}
 
 	for {
-		m, err := client.Receive(false)
+		rawEvent, err := client.Receive(false)
 		if err != nil {
 			return errors.Wrap(err, "receive failed")
 		}
 
-		if m.MessageType < 1300 || m.MessageType >= 2100 {
+		typ := auparse.AuditMessageType(rawEvent.MessageType)
+
+		// Messages from 1300-2099 are kernel --> user space communication.
+		if typ < auparse.AUDIT_USER_AUTH ||
+			typ >= auparse.AUDIT_ANOM_LOGIN_FAILURES {
 			continue
 		}
 
 		// Ignore AUDIT_EOE.
-		if m.MessageType == 1320 {
+		if typ == auparse.AUDIT_EOE {
 			continue
 		}
 
-		event := map[string]interface{}{
-			"type": m.MessageType,
-			"msg":  string(m.RawData),
+		if err := outputEvent(rawEvent); err != nil {
+			log.WithError(err).Warn("failed to output")
 		}
+	}
 
-		var jsonEvent []byte
-		if *pretty {
-			jsonEvent, err = json.MarshalIndent(event, "", "  ")
-		} else {
-			jsonEvent, err = json.Marshal(event)
-		}
+	return nil
+}
+
+func outputEvent(raw *linux.RawAuditMessage) error {
+	typ := auparse.AuditMessageType(raw.MessageType)
+	msg := string(raw.RawData)
+
+	switch *format {
+	default:
+		fmt.Printf("type=%v msg=%v\n", typ.String(), msg)
+	case "json":
+		auditMsg, _ := auparse.Parse(typ, msg)
+		jsonBytes, err := json.Marshal(auditMsg.ToMapStr())
 		if err != nil {
-			log.WithError(err).Warn("Failed to marshal event to JSON")
+			return err
 		}
-
-		fmt.Println(string(jsonEvent))
+		fmt.Println(string(jsonBytes))
 	}
 
 	return nil
