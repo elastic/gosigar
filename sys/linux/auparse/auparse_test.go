@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -38,6 +39,8 @@ const (
 		`fsgid=0 tty=(none) ses=4294967295 comm="master" ` +
 		`exe="/usr/libexec/postfix/master" ` +
 		`subj=system_u:system_r:postfix_master_t:s0 key=(null)`
+
+	syscallLogLine = `type=SYSCALL msg=` + syscallMsg
 )
 
 func TestNormalizeAuditMessage(t *testing.T) {
@@ -210,4 +213,52 @@ func BenchmarkParseAuditHeaderRegex(b *testing.B) {
 		_ = time.Unix(sec, msec*int64(time.Millisecond))
 		_, _ = strconv.Atoi(matches[3])
 	}
+}
+
+// ExampleParseLogLine demonstrates parsing a log line from auditd and shows
+// what the parsed data looks like.
+func ExampleParseLogLine() {
+	msg, err := ParseLogLine(syscallLogLine)
+	if err != nil {
+		return
+	}
+
+	evt, err := json.MarshalIndent(msg.ToMapStr(), "", "  ")
+	if err != nil {
+		return
+	}
+
+	fmt.Println(string(evt))
+	// Output:
+	//{
+	//   "@timestamp": "2017-03-21 23:12:51.011 +0000 UTC",
+	//   "a0": "15",
+	//   "a1": "7ffd83722200",
+	//   "a2": "6e",
+	//   "a3": "ea60",
+	//   "arch": "x86_64",
+	//   "auid": "4294967295",
+	//   "comm": "master",
+	//   "egid": "0",
+	//   "euid": "0",
+	//   "exe": "/usr/libexec/postfix/master",
+	//   "exit": "0",
+	//   "fsgid": "0",
+	//   "fsuid": "0",
+	//   "gid": "0",
+	//   "items": "1",
+	//   "pid": "1229",
+	//   "ppid": "1",
+	//   "raw_msg": "audit(1490137971.011:50406): arch=c000003e syscall=42 success=yes exit=0 a0=15 a1=7ffd83722200 a2=6e a3=ea60 items=1 ppid=1 pid=1229 auid=4294967295 uid=0 gid=0 euid=0 suid=0 fsuid=0 egid=0 sgid=0 fsgid=0 tty=(none) ses=4294967295 comm=\"master\" exe=\"/usr/libexec/postfix/master\" subj=system_u:system_r:postfix_master_t:s0 key=(null)",
+	//   "record_type": "SYSCALL",
+	//   "sequence": "50406",
+	//   "ses": "4294967295",
+	//   "sgid": "0",
+	//   "subj": "system_u:system_r:postfix_master_t:s0",
+	//   "success": "yes",
+	//   "suid": "0",
+	//   "syscall": "connect",
+	//   "tty": "(none)",
+	//   "uid": "0"
+	//}
 }

@@ -54,7 +54,9 @@ type AuditMessage struct {
 
 // ToMapStr returns a new map containing the parsed key value pairs, the
 // record_type, @timestamp, and sequence. The parsed key value pairs have
-// a lower precedence than the well-known keys and will knot override them.
+// a lower precedence than the well-known keys and will not override them.
+// If an error occurred while parsing the message then an error key will be
+// present.
 func (m *AuditMessage) ToMapStr() map[string]string {
 	out := make(map[string]string, len(m.Data)+4)
 	for k, v := range m.Data {
