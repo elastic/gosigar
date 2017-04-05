@@ -9,6 +9,7 @@ import (
 	"os"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -56,7 +57,7 @@ func getStatus(t testing.TB) (*AuditStatus, error) {
 
 func TestAuditClientSetPID(t *testing.T) {
 	if os.Geteuid() != 0 {
-		t.Skip("must be root to set audit port id")
+		t.Skip("must be root to set audit pid")
 	}
 
 	var dumper io.WriteCloser
@@ -71,10 +72,186 @@ func TestAuditClientSetPID(t *testing.T) {
 	}
 	defer c.Close()
 
-	err = c.SetPortID(0)
+	err = c.SetPID(WaitForReply)
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Log("SetPID complete")
+}
+
+func TestAuditClientSetEnabled(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("must be root to enable audit")
+	}
+
+	var dumper io.WriteCloser
+	if *hexdump {
+		dumper = hex.Dumper(os.Stdout)
+		defer dumper.Close()
+	}
+
+	c, err := NewAuditClient(dumper)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+
+	err = c.SetEnabled(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("SetEnabled complete")
+
+	status, err := getStatus(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.EqualValues(t, 1, status.Enabled)
+}
+
+func TestAuditClientSetRateLimit(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("must be root to set rate limit")
+	}
+
+	var dumper io.WriteCloser
+	if *hexdump {
+		dumper = hex.Dumper(os.Stdout)
+		defer dumper.Close()
+	}
+
+	c, err := NewAuditClient(dumper)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+
+	var limit uint32 = 1233
+	err = c.SetRateLimit(limit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("SetRateLimit complete")
+
+	status, err := getStatus(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.EqualValues(t, limit, status.RateLimit)
+}
+
+func TestAuditClientSetBacklogLimit(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("must be root to set rate limit")
+	}
+
+	var dumper io.WriteCloser
+	if *hexdump {
+		dumper = hex.Dumper(os.Stdout)
+		defer dumper.Close()
+	}
+
+	c, err := NewAuditClient(dumper)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+
+	var limit uint32 = 10002
+	err = c.SetBacklogLimit(limit)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("SetBacklogLimit complete")
+
+	status, err := getStatus(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.EqualValues(t, limit, status.BacklogLimit)
+}
+
+func TestAuditClientReceive(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("must be root to set audit port id")
+	}
+
+	var dumper io.WriteCloser
+	if *hexdump {
+		dumper = hex.Dumper(os.Stdout)
+		defer dumper.Close()
+	}
+
+	// Open two clients from this process to consume the port ID that's
+	// equal to the process ID. The next client will have a random port ID
+	// and this will test that the client works properly when two sockets are
+	// used.
+	observer, err := NewAuditClient(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer observer.Close()
+
+	if err := observer.SetEnabled(false); err != nil {
+		t.Fatal("failed to disable audit", err)
+	}
+
+	defer func() {
+		status, err := observer.GetStatus()
+		t.Logf("get status: status=%+v, err=%v", status, err)
+	}()
+
+	// Start the testing.
+	client, err := NewAuditClient(dumper)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	status, err := client.GetStatus()
+	if err != nil {
+		t.Fatal("get status failed", err)
+	}
+	t.Logf("status=%+v, process_id=%v, port_id=%v", status, os.Getpid(), client.GetNetlinkPortID())
+
+	err = client.SetEnabled(true)
+	if err != nil {
+		t.Fatal("set enabled failed:", err)
+	}
+
+	err = client.SetBacklogLimit(1024)
+	if err != nil {
+		t.Fatal("set backlog limit failed:", err)
+	}
+
+	err = client.SetPID(WaitForReply)
+	if err != nil {
+		t.Fatal("set pid failed:", err, " (Did you stop auditd?)")
+	}
+
+	// Depending on the kernel version, it will reply with an AUDIT_REPLACE (1329)
+	// message, followed by an AUDIT_CONFIG_CHANGE (1305) message, followed
+	// by an ACK. Older kernels seem to not send the AUDIT_CONFIG_CHANGE message.
+	err = client.SetPID(NoWait)
+	if err != nil {
+		t.Fatal("set pid failed:", err)
+	}
+
+	// Expect at least 2 messages caused by our previous call.
+	var msgCount int
+	for i := 0; i < 10; i++ {
+		msg, err := client.Receive(true)
+		if err == syscall.EAGAIN {
+			time.Sleep(500 * time.Millisecond)
+			continue
+		} else if err != nil {
+			t.Fatal(err)
+		} else {
+			t.Logf("Received: type=%v, msg=%v", msg.MessageType, string(msg.RawData))
+			msgCount++
+		}
+	}
+	assert.True(t, msgCount >= 2, "expected at least two messages")
 }
 
 func TestAuditStatusMask(t *testing.T) {

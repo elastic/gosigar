@@ -83,8 +83,19 @@ func read() error {
 		return err
 	}
 
+	status, err := client.GetStatus()
+	if err != nil {
+		return errors.Wrap(err, "failed to get audit status")
+	}
+	log.WithField("status", status).Info("received audit status")
+
+	log.Debugln("enabling auditing in the kernel")
+	if err = client.SetEnabled(true); err != nil {
+		return errors.Wrap(err, "failed to set enabled=true")
+	}
+
 	log.Debugln("sending message to kernel registering our PID as the audit daemon")
-	if err = client.SetPortID(0); err != nil {
+	if err = client.SetPID(linux.WaitForReply); err != nil {
 		return errors.Wrap(err, "failed to set audit PID")
 	}
 
