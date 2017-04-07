@@ -4,12 +4,13 @@ package linux
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"sync/atomic"
 	"syscall"
+
+	"github.com/pkg/errors"
 )
 
 // Generic Netlink Client
@@ -136,12 +137,12 @@ func (c *NetlinkClient) Receive(nonBlocking bool, p NetlinkParser) ([]syscall.Ne
 		return nil, err
 	}
 	if nr < syscall.NLMSG_HDRLEN {
-		return nil, syscall.EINVAL
+		return nil, errors.Errorf("not enough bytes (%v) received to form a netlink header", nr)
 	}
 	fromNetlink, ok := from.(*syscall.SockaddrNetlink)
 	if !ok || fromNetlink.Pid != 0 {
 		// Spoofed packet received on audit netlink socket.
-		return nil, syscall.EINVAL
+		return nil, errors.New("message received was not from the kernel")
 	}
 
 	buf := c.readBuf[:nr]
@@ -155,7 +156,7 @@ func (c *NetlinkClient) Receive(nonBlocking bool, p NetlinkParser) ([]syscall.Ne
 
 	msgs, err := p(buf)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse netlink messages: %v", err)
+		return nil, fmt.Errorf("failed to parse netlink messages (bytes_received=%v): %v", nr, err)
 	}
 
 	return msgs, nil

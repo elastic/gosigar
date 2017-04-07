@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
+	"os"
 	"syscall"
 	"time"
 	"unsafe"
@@ -24,6 +25,15 @@ const (
 const (
 	AuditGet uint16 = iota + 1000
 	AuditSet
+)
+
+// WaitMode is a flag to control the behavior of methods that abstract
+// asynchronous communication for the caller.
+type WaitMode uint8
+
+const (
+	WaitForReply WaitMode = iota + 1 // Wait for the reply message.
+	NoWait                           // Don't wait for reply messages.
 )
 
 // AuditClient is a client for communicating with the Linux kernels audit
@@ -106,21 +116,57 @@ func (c *AuditClient) GetStatus() (*AuditStatus, error) {
 	return replyStatus, nil
 }
 
-// SetPortID sends a netlink message to the kernel telling it the port ID of
-// netlink listener that should receive the audit messages.
+// SetPID sends a netlink message to the kernel telling it the PID of the
+// client that should receive audit messages.
 // https://github.com/linux-audit/audit-userspace/blob/990aa27ccd02f9743c4f4049887ab89678ab362a/lib/libaudit.c#L432-L464
-func (c *AuditClient) SetPortID(pid int) error {
-	netlinkPID := uint32(pid)
-	if netlinkPID == 0 {
-		netlinkPID = c.netlink.pid
+func (c *AuditClient) SetPID(wm WaitMode) error {
+	status := AuditStatus{
+		Mask:    AuditStatusPID,
+		Enabled: 1,
+		PID:     uint32(os.Getpid()),
+	}
+	return c.set(status, wm)
+}
+
+// SetRateLimit will set the maximum number of messages that the kernel will
+// send per second. This can be used to throttle the rate if systems become
+// unresponsive. Of course the trade off is that events will be dropped.
+// The default value is 0, meaning no limit.
+func (c *AuditClient) SetRateLimit(perSecondLimit uint32) error {
+	status := AuditStatus{
+		Mask:      AuditStatusRateLimit,
+		RateLimit: perSecondLimit,
+	}
+	return c.set(status, WaitForReply)
+}
+
+// SetBacklogLimit sets the queue length for audit events awaiting transfer to
+// the audit daemon. The default value is 64 which can potentially be overrun by
+// bursts of activity. When the backlog limit is reached, the kernel consults
+// the failure_flag to see what action to take.
+func (c *AuditClient) SetBacklogLimit(limit uint32) error {
+	status := AuditStatus{
+		Mask:         AuditStatusBacklogLimit,
+		BacklogLimit: limit,
+	}
+	return c.set(status, WaitForReply)
+}
+
+// SetEnabled is used to control whether or not the audit system is
+// active. When the audit system is enabled (enabled set to 1), every syscall
+// will pass through the audit system to collect information and potentially
+// trigger an event.
+func (c *AuditClient) SetEnabled(enabled bool) error {
+	var e uint32
+	if enabled {
+		e = 1
 	}
 
 	status := AuditStatus{
-		Mask:    AuditStatusEnabled | AuditStatusPID,
-		Enabled: 1,
-		PID:     netlinkPID,
+		Mask:    AuditStatusEnabled,
+		Enabled: e,
 	}
-	return c.set(status)
+	return c.set(status, WaitForReply)
 }
 
 // RawAuditMessage is a raw audit message received from the kernel.
@@ -159,7 +205,7 @@ func (c *AuditClient) getReply(seq uint32) (*syscall.NetlinkMessage, error) {
 
 	// Retry the non-blocking read multiple times until a response is received.
 	for i := 0; i < 10; i++ {
-		msgs, err = c.netlink.Receive(true, syscall.ParseNetlinkMessage)
+		msgs, err = c.netlink.Receive(true, parseNetlinkAuditMessage)
 		if err != nil {
 			switch err {
 			case syscall.EINTR:
@@ -168,22 +214,26 @@ func (c *AuditClient) getReply(seq uint32) (*syscall.NetlinkMessage, error) {
 				time.Sleep(50 * time.Millisecond)
 				continue
 			default:
-				return nil, errors.Wrap(err, "error receiving audit netlink packet")
+				return nil, errors.Wrap(err, "error receiving audit reply")
 			}
 		}
 
 		break
 	}
 
-	if len(msgs) == 0 || msgs[0].Header.Seq != seq {
+	if len(msgs) == 0 {
 		return nil, errors.New("no reply received")
 	}
-
 	msg := msgs[0]
+
+	if msg.Header.Seq != seq {
+		return nil, errors.Errorf("unexpected sequence number for reply (expected %v but got %v)",
+			seq, msg.Header.Seq)
+	}
 	return &msg, nil
 }
 
-func (c *AuditClient) set(status AuditStatus) error {
+func (c *AuditClient) set(status AuditStatus, mode WaitMode) error {
 	msg := syscall.NetlinkMessage{
 		Header: syscall.NlMsghdr{
 			Type:  AuditSet,
@@ -195,6 +245,10 @@ func (c *AuditClient) set(status AuditStatus) error {
 	seq, err := c.netlink.Send(msg)
 	if err != nil {
 		return errors.Wrap(err, "failed sending request")
+	}
+
+	if mode == NoWait {
+		return nil
 	}
 
 	ack, err := c.getReply(seq)
