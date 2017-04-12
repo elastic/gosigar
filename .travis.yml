@@ -5,7 +5,7 @@ os:
   - osx
 
 go:
-  - 1.8
+  - 1.8.1
 
 env:
   global:
@@ -30,7 +30,7 @@ script:
   - go build
   - mkdir -p build/coverage
   - gotestcover -v -coverprofile=build/coverage/unit.cov github.com/elastic/gosigar/...
-  - for i in $(ls examples | grep -v ^au); do go build -o examples/$i/$i ./examples/$i; ./examples/$i/$i; done
+  - for i in $(ls examples); do go build -o examples/$i/$i ./examples/$i; ./examples/$i/$i; done
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -f build/coverage/unit.cov
