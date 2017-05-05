@@ -218,6 +218,225 @@ DirectMap2M:      333824 kB
 	}
 }
 
+func TestLinuxMemAndSwapKernel_3_14(t *testing.T) {
+	setUp(t)
+	defer tearDown(t)
+
+	meminfoContents := `
+MemTotal:         500184 kB
+MemFree:           31360 kB
+MemAvailable:     414168 kB
+Buffers:           28740 kB
+Cached:           325408 kB
+SwapCached:          264 kB
+Active:           195476 kB
+Inactive:         198612 kB
+Active(anon):      14920 kB
+Inactive(anon):    27268 kB
+Active(file):     180556 kB
+Inactive(file):   171344 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:        524284 kB
+SwapFree:         520352 kB
+Dirty:                 0 kB
+Writeback:             0 kB
+AnonPages:         39772 kB
+Mapped:            24132 kB
+Shmem:              2236 kB
+Slab:              57988 kB
+SReclaimable:      43524 kB
+SUnreclaim:        14464 kB
+KernelStack:        2464 kB
+PageTables:         3096 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:      774376 kB
+Committed_AS:     490916 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:           0 kB
+VmallocChunk:          0 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:         0 kB
+CmaTotal:              0 kB
+CmaFree:               0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+DirectMap4k:       63424 kB
+DirectMap2M:      460800 kB
+`
+
+	meminfoFile := procd + "/meminfo"
+	err := ioutil.WriteFile(meminfoFile, []byte(meminfoContents), 0444)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mem := sigar.Mem{}
+	if assert.NoError(t, mem.Get()) {
+		assert.Equal(t, uint64(500184*1024), mem.Total)
+		assert.Equal(t, uint64(31360*1024), mem.Free)
+		assert.Equal(t, uint64(414168*1024), mem.ActualFree)
+	}
+
+	swap := sigar.Swap{}
+	if assert.NoError(t, swap.Get()) {
+		assert.Equal(t, uint64(524284*1024), swap.Total)
+		assert.Equal(t, uint64(520352*1024), swap.Free)
+	}
+}
+
+func TestLinuxMemAndSwapMissingMemTotal(t *testing.T) {
+	setUp(t)
+	defer tearDown(t)
+
+	meminfoContents := `
+MemFree:           31360 kB
+MemAvailable:     414168 kB
+Buffers:           28740 kB
+Cached:           325408 kB
+SwapCached:          264 kB
+Active:           195476 kB
+Inactive:         198612 kB
+Active(anon):      14920 kB
+Inactive(anon):    27268 kB
+Active(file):     180556 kB
+Inactive(file):   171344 kB
+Unevictable:           0 kB
+Mlocked:               0 kB
+SwapTotal:        524284 kB
+SwapFree:         520352 kB
+Dirty:                 0 kB
+Writeback:             0 kB
+AnonPages:         39772 kB
+Mapped:            24132 kB
+Shmem:              2236 kB
+Slab:              57988 kB
+SReclaimable:      43524 kB
+SUnreclaim:        14464 kB
+KernelStack:        2464 kB
+PageTables:         3096 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:      774376 kB
+Committed_AS:     490916 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:           0 kB
+VmallocChunk:          0 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:         0 kB
+CmaTotal:              0 kB
+CmaFree:               0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+DirectMap4k:       63424 kB
+DirectMap2M:      460800 kB
+`
+
+	meminfoFile := procd + "/meminfo"
+	err := ioutil.WriteFile(meminfoFile, []byte(meminfoContents), 0444)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mem := sigar.Mem{}
+	if assert.NoError(t, mem.Get()) {
+		assert.Equal(t, uint64(0), mem.Total)
+		assert.Equal(t, uint64(31360*1024), mem.Free)
+		assert.Equal(t, uint64(414168*1024), mem.ActualFree)
+	}
+
+	swap := sigar.Swap{}
+	if assert.NoError(t, swap.Get()) {
+		assert.Equal(t, uint64(524284*1024), swap.Total)
+		assert.Equal(t, uint64(520352*1024), swap.Free)
+	}
+}
+
+func TestLinuxMemAndSwapKernel_3_14_memavailable_zero(t *testing.T) {
+	setUp(t)
+	defer tearDown(t)
+
+	meminfoContents := `
+MemTotal:       148535680 kB
+MemFree:          417356 kB
+MemAvailable:          0 kB
+Buffers:            1728 kB
+Cached:           129928 kB
+SwapCached:         8208 kB
+Active:         141088676 kB
+Inactive:        5568132 kB
+Active(anon):   141076780 kB
+Inactive(anon):  5556936 kB
+Active(file):      11896 kB
+Inactive(file):    11196 kB
+Unevictable:        3648 kB
+Mlocked:            3648 kB
+SwapTotal:       4882428 kB
+SwapFree:              0 kB
+Dirty:               808 kB
+Writeback:           220 kB
+AnonPages:      146521272 kB
+Mapped:            41384 kB
+Shmem:            105864 kB
+Slab:             522648 kB
+SReclaimable:     233508 kB
+SUnreclaim:       289140 kB
+KernelStack:       85024 kB
+PageTables:       368760 kB
+NFS_Unstable:          0 kB
+Bounce:                0 kB
+WritebackTmp:          0 kB
+CommitLimit:    79150268 kB
+Committed_AS:   272491684 kB
+VmallocTotal:   34359738367 kB
+VmallocUsed:           0 kB
+VmallocChunk:          0 kB
+HardwareCorrupted:     0 kB
+AnonHugePages:  78061568 kB
+ShmemHugePages:        0 kB
+ShmemPmdMapped:        0 kB
+CmaTotal:              0 kB
+CmaFree:               0 kB
+HugePages_Total:       0
+HugePages_Free:        0
+HugePages_Rsvd:        0
+HugePages_Surp:        0
+Hugepagesize:       2048 kB
+DirectMap4k:      124388 kB
+DirectMap2M:     5105664 kB
+DirectMap1G:    147849216 kB
+`
+
+	meminfoFile := procd + "/meminfo"
+	err := ioutil.WriteFile(meminfoFile, []byte(meminfoContents), 0444)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mem := sigar.Mem{}
+	if assert.NoError(t, mem.Get()) {
+		assert.Equal(t, uint64(148535680*1024), mem.Total)
+		assert.Equal(t, uint64(417356*1024), mem.Free)
+		assert.Equal(t, uint64(0), mem.ActualFree)
+	}
+
+	swap := sigar.Swap{}
+	if assert.NoError(t, swap.Get()) {
+		assert.Equal(t, uint64(4882428*1024), swap.Total)
+		assert.Equal(t, uint64(0), swap.Free)
+	}
+
+}
+
 func TestFDUsage(t *testing.T) {
 	setUp(t)
 	defer tearDown(t)

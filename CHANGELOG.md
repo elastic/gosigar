@@ -5,6 +5,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Read `MemAvailable` value for kernel 3.14+
 
 ### Changed
 
