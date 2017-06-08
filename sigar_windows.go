@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -41,7 +42,8 @@ var (
 
 	// bootTime is the time when the OS was last booted. This value may be nil
 	// on operating systems that do not support the WMI query used to obtain it.
-	bootTime *time.Time
+	bootTime     *time.Time
+	bootTimeLock sync.Mutex
 )
 
 func init() {
@@ -72,12 +74,14 @@ func (self *ProcFDUsage) Get(pid int) error {
 }
 
 func (self *Uptime) Get() error {
-	if bootTime == nil {
-		// Minimum supported OS is Windows Vista.
-		if !version.IsWindowsVistaOrGreater() {
-			return ErrNotImplemented{runtime.GOOS}
-		}
+	// Minimum supported OS is Windows Vista.
+	if !version.IsWindowsVistaOrGreater() {
+		return ErrNotImplemented{runtime.GOOS}
+	}
 
+	bootTimeLock.Lock()
+	defer bootTimeLock.Unlock()
+	if bootTime == nil {
 		os, err := getWin32OperatingSystem()
 		if err != nil {
 			return errors.Wrap(err, "failed to get boot time using WMI")
