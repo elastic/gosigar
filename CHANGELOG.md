@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 ### Changed
+- Fixed Windows issue that caused a hang during `init()` if WMI wasn't ready. #74
 
 ### Deprecated
 
