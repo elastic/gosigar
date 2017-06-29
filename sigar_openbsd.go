@@ -49,8 +49,7 @@ type Uvmexp struct {
 	vtextmin           uint32
 	vnodemin           uint32
 	anonminpct         uint32
-	vtextmi            uint32
-	npct               uint32
+	vtextminpct        uint32
 	vnodeminpct        uint32
 	nswapdev           uint32
 	swpages            uint32
@@ -79,6 +78,7 @@ type Uvmexp struct {
 	zeroaborts         uint32
 	fltnoram           uint32
 	fltnoanon          uint32
+	fltnoamap          uint32
 	fltpgwait          uint32
 	fltpgrele          uint32
 	fltrelck           uint32
@@ -130,6 +130,9 @@ type Bcachestats struct {
 	delwribufs     uint64
 	kvaslots       uint64
 	kvaslots_avail uint64
+	highflips      uint64
+	highflops      uint64
+	dmaflips       uint64
 }
 
 type Swapent struct {
