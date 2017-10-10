@@ -8,6 +8,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - Fixed Trim environment variables when comparing values in the test suite. #79
+- Make kern_procargs more robust under darwin when we cannot retrieve
+  all the information about a process. #78
 
 ### Deprecated
 
