@@ -5,6 +5,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -134,7 +135,7 @@ func TestProcEnv(t *testing.T) {
 		assert.True(t, len(env.Vars) > 0, "env is empty")
 
 		for k, v := range env.Vars {
-			assert.Equal(t, os.Getenv(k), v)
+			assert.Equal(t, strings.TrimSpace(os.Getenv(k)), v)
 		}
 	}
 }

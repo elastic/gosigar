@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 ### Changed
+- Fixed Trim environment variables when comparing values in the test suite. #79
 
 ### Deprecated
 
