@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - OpenBSD returns `ErrNotImplemented` for `ProcTime.Get` instead of `nil`. #83
+- Fixed incorrect `Mem.Used` calculation under linux. #82
 
 ### Deprecated
 

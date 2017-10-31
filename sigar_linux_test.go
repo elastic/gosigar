@@ -209,6 +209,9 @@ DirectMap2M:      333824 kB
 	if assert.NoError(t, mem.Get()) {
 		assert.Equal(t, uint64(374256*1024), mem.Total)
 		assert.Equal(t, uint64(274460*1024), mem.Free)
+		assert.Equal(t, uint64(mem.Total-mem.Free), mem.Used)
+		assert.Equal(t, uint64((274460+9764+38648)*1024), mem.ActualFree)
+		assert.Equal(t, uint64(mem.Total-mem.ActualFree), mem.ActualUsed)
 	}
 
 	swap := sigar.Swap{}
@@ -281,6 +284,8 @@ DirectMap2M:      460800 kB
 		assert.Equal(t, uint64(500184*1024), mem.Total)
 		assert.Equal(t, uint64(31360*1024), mem.Free)
 		assert.Equal(t, uint64(414168*1024), mem.ActualFree)
+		assert.Equal(t, uint64(mem.Total-mem.Free), mem.Used)
+		assert.Equal(t, uint64(mem.Total-mem.ActualFree), mem.ActualUsed)
 	}
 
 	swap := sigar.Swap{}

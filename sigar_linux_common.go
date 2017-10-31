@@ -71,7 +71,7 @@ func (self *Mem) Get() error {
 		self.ActualFree = self.Free + buffers + cached
 	}
 
-	self.Used = self.Total - self.ActualFree
+	self.Used = self.Total - self.Free
 	self.ActualUsed = self.Total - self.ActualFree
 
 	return nil
