@@ -5,12 +5,18 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added method stubs to enable compilation for operating systems that are not
+  supported by gosigar. All methods return `ErrNotImplemented` on these unsupported
+  operating systems. #83
+- FreeBSD returns `ErrNotImplemented` for `ProcTime.Get` #83
 
 ### Changed
+- OpenBSD returns `ErrNotImplemented` for `ProcTime.Get` instead of `nil` #83
 
 ### Deprecated
 
 ### Removed
+- Remove NetBSD build from sigar_unix.go as it is not supported by gosigar #83
 
 ## [0.5.0]
 
