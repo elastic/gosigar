@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.6.0]
 
 ### Added
 - Added method stubs to enable compilation for operating systems that are not
@@ -14,8 +14,6 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - OpenBSD returns `ErrNotImplemented` for `ProcTime.Get` instead of `nil`. #83
 - Fixed incorrect `Mem.Used` calculation under linux. #82
 - Fixed `ProcState` on Linux and FreeBSD when process names contain parentheses. #81
-
-### Deprecated
 
 ### Removed
 - Remove NetBSD build from sigar_unix.go as it is not supported by gosigar. #83
