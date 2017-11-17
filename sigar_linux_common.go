@@ -188,8 +188,8 @@ func (self *ProcState) Get(pid int) error {
 
 	str := string(contents)
 	idx := strings.LastIndex(str, ")")
-	pidAndName := str[ : idx + 1]
-	fields := strings.Fields(str[idx+2 : len(str))
+	pidAndName := str[:idx+1]
+	fields := strings.Fields(str[idx+2 : len(str)])
 	name := strings.SplitAfterN(pidAndName, " ", 2)[1]
 	if name[0] == '(' && name[len(name)-1] == ')' {
 		self.Name = name[1 : len(name)-1] // strip ()'s
