@@ -40,6 +40,8 @@ func TestLinuxProcState(t *testing.T) {
 	var procNames = []string{
 		"cron",
 		"a very long process name",
+		"(parasite)",
+		"(parasite ()) in space",
 	}
 
 	for _, n := range procNames {
