@@ -12,6 +12,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - OpenBSD returns `ErrNotImplemented` for `ProcTime.Get` instead of `nil`. #83
+- Fixed `ProcState` on Linux and FreeBSD when process names contain parentheses. #81
 
 ### Deprecated
 

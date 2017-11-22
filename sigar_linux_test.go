@@ -40,6 +40,9 @@ func TestLinuxProcState(t *testing.T) {
 	var procNames = []string{
 		"cron",
 		"a very long process name",
+		"(sd-pam)",
+		"]",
+		"(",
 	}
 
 	for _, n := range procNames {
@@ -66,9 +69,18 @@ func TestLinuxProcState(t *testing.T) {
 
 			state := sigar.ProcState{}
 			if assert.NoError(t, state.Get(pid)) {
-				assert.Equal(t, n, state.Name)
-				assert.Equal(t, 2, state.Pgid)
-				assert.Equal(t, strconv.Itoa(uid), state.Username)
+				expected := sigar.ProcState{
+					Name:      n,
+					Username:  strconv.Itoa(uid),
+					State:     'S',
+					Ppid:      1,
+					Pgid:      2,
+					Tty:       4,
+					Priority:  15,
+					Nice:      16,
+					Processor: 36,
+				}
+				assert.Equal(t, expected, state)
 			}
 		}()
 	}
@@ -539,7 +551,7 @@ func writeFDs(pid int, count int) error {
 }
 
 func writePidStats(pid int, procName string, path string) error {
-	stats := "S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 " +
+	stats := "S 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 " +
 		"20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 " +
 		"35 36 37 38 39"
 
