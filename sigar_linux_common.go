@@ -188,7 +188,7 @@ func (self *ProcState) Get(pid int) error {
 	// Extract the comm value with is surrounded by parentheses.
 	lIdx := bytes.Index(data, []byte("("))
 	rIdx := bytes.LastIndex(data, []byte(")"))
-	if lIdx < 0 || rIdx < 0 {
+	if lIdx < 0 || rIdx < 0 || lIdx >= rIdx || rIdx+2 >= len(data) {
 		return fmt.Errorf("failed to extract comm for pid %d from '%v'", pid, string(data))
 	}
 	self.Name = string(data[lIdx+1 : rIdx])
