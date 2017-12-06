@@ -5,6 +5,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added method stubs for process handling for operating system that are not supported
+  by gosigar. All methods return `ErrNotImplemented` on such systems. #88
 
 ### Changed
 
