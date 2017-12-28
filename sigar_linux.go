@@ -68,30 +68,6 @@ func (self *ProcFDUsage) Get(pid int) error {
 	return nil
 }
 
-func (self *ProcTime) Get(pid int) error {
-	contents, err := readProcFile(pid, "stat")
-	if err != nil {
-		return err
-	}
-
-	fields := strings.Fields(string(contents))
-
-	user, _ := strtoull(fields[13])
-	sys, _ := strtoull(fields[14])
-	// convert to millis
-	self.User = user * (1000 / system.ticks)
-	self.Sys = sys * (1000 / system.ticks)
-	self.Total = self.User + self.Sys
-
-	// convert to millis
-	self.StartTime, _ = strtoull(fields[21])
-	self.StartTime /= system.ticks
-	self.StartTime += system.btime
-	self.StartTime *= 1000
-
-	return nil
-}
-
 func parseCpuStat(self *Cpu, line string) error {
 	fields := strings.Fields(line)
 
