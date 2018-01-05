@@ -8,6 +8,9 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Added method stubs for process handling for operating system that are not supported
   by gosigar. All methods return `ErrNotImplemented` on such systems. #88
 
+### Fixed
+- Fix freebsd build by using the common version of Get(pid). #91
+
 ### Changed
 - Fixed issues in cgroup package by adding missing error checks and closing
   file handles. #92
