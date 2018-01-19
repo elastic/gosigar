@@ -85,3 +85,13 @@ func TestConcreteGetFDUsage(t *testing.T) {
 		assert.True(t, fdUsage.Open <= fdUsage.Max)
 	}
 }
+
+func TestConcreteGetRusage(t *testing.T) {
+	concreteSigar := &sigar.ConcreteSigar{}
+	resourceUsage, err := concreteSigar.GetRusage(0)
+	skipNotImplemented(t, err, "netbsd", "solaris")
+	if assert.NoError(t, err) {
+		assert.True(t, resourceUsage.Utime >= 0)
+		assert.True(t, resourceUsage.Stime >= 0)
+	}
+}
