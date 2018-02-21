@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"unsafe"
 
-        "github.com/elastic/gosigar/endian"
+	"github.com/elastic/gosigar/endian"
 	"github.com/pkg/errors"
 )
 
@@ -115,8 +115,8 @@ const (
 	INET_DIAG_MARK
 )
 
-var(
-        byteOrder = endian.GetEndian()
+var (
+	byteOrder = endian.GetEndian()
 )
 
 // NetlinkInetDiag sends the given netlink request parses the responses with the
@@ -199,7 +199,7 @@ done:
 func serialize(msg syscall.NetlinkMessage) []byte {
 	msg.Header.Len = uint32(syscall.SizeofNlMsghdr + len(msg.Data))
 	b := make([]byte, msg.Header.Len)
-        byteOrder.PutUint32(b[0:4], msg.Header.Len)
+	byteOrder.PutUint32(b[0:4], msg.Header.Len)
 	byteOrder.PutUint16(b[4:6], msg.Header.Type)
 	byteOrder.PutUint16(b[6:8], msg.Header.Flags)
 	byteOrder.PutUint32(b[8:12], msg.Header.Seq)

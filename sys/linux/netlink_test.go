@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/elastic/gosigar/endian"
-        "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseNetlinkErrorDataTooShort(t *testing.T) {

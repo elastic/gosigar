@@ -3,10 +3,10 @@
 package linux
 
 import (
-        "encoding/binary"
+	"encoding/binary"
 	"errors"
 
-        "github.com/elastic/gosigar/endian"
+	"github.com/elastic/gosigar/endian"
 )
 
 // Netlink Error Code Handling

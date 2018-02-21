@@ -10,7 +10,7 @@ import (
 	"os"
 	"syscall"
 
-        "github.com/elastic/gosigar/endian"
+	"github.com/elastic/gosigar/endian"
 )
 
 const (
