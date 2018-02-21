@@ -3,7 +3,6 @@
 package linux
 
 import (
-	"encoding/binary"
 	"errors"
 
 	"github.com/elastic/gosigar/endian"
