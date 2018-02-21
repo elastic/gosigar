@@ -3,8 +3,10 @@
 package linux
 
 import (
-	"encoding/binary"
+        "encoding/binary"
 	"errors"
+
+        "github.com/elastic/gosigar/endian"
 )
 
 // Netlink Error Code Handling
@@ -14,7 +16,7 @@ import (
 // describing the problem will be returned.
 func ParseNetlinkError(netlinkData []byte) error {
 	if len(netlinkData) >= 4 {
-		errno := -binary.LittleEndian.Uint32(netlinkData[:4])
+		errno := -endian.GetEndian().Uint32(netlinkData[:4])
 		return NetlinkErrno(errno)
 	}
 	return errors.New("received netlink error (data too short to read errno)")
