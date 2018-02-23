@@ -1,7 +1,9 @@
 package endian
 
-import "encoding/binary"
-import "unsafe"
+import (
+	"encoding/binary"
+	"unsafe"
+)
 
 func GetEndian() binary.ByteOrder {
 	var i int32 = 0x1
