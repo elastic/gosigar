@@ -10,7 +10,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/elastic/gosigar/endian"
+	"github.com/elastic/gosigar/sys"
 )
 
 const (
@@ -32,7 +32,7 @@ const (
 )
 
 var (
-	byteOrder = endian.GetEndian()
+	byteOrder = sys.GetEndian()
 )
 
 // linux/connector.h: struct cb_id

@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/elastic/gosigar/endian"
+	"github.com/elastic/gosigar/sys"
 	"github.com/pkg/errors"
 )
 
@@ -116,7 +116,7 @@ const (
 )
 
 var (
-	byteOrder = endian.GetEndian()
+	byteOrder = sys.GetEndian()
 )
 
 // NetlinkInetDiag sends the given netlink request parses the responses with the

@@ -7,7 +7,7 @@ import (
 	"encoding/binary"
 	"testing"
 
-	"github.com/elastic/gosigar/endian"
+	"github.com/elastic/gosigar/sys"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,6 +17,6 @@ func TestParseNetlinkErrorDataTooShort(t *testing.T) {
 
 func TestParseNetlinkErrorErrno(t *testing.T) {
 	buf := new(bytes.Buffer)
-	binary.Write(buf, endian.GetEndian(), -1*int32(NLE_MSG_TOOSHORT))
+	binary.Write(buf, sys.GetEndian(), -1*int32(NLE_MSG_TOOSHORT))
 	assert.Equal(t, ParseNetlinkError(buf.Bytes()), NLE_MSG_TOOSHORT)
 }
