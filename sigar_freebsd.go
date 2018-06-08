@@ -138,7 +138,7 @@ func (self *Mem) Get() error {
 	if err != nil {
 		return err
 	}
-	self.Free = uint64(val)
+	self.Free = uint64(val) * pagesize
 
 	name = C.CString("vm.stats.vm.v_inactive_count")
 	_, err = C.sysctlbyname(name, unsafe.Pointer(&val), &sc, nil, 0)
@@ -150,8 +150,8 @@ func (self *Mem) Get() error {
 
 	self.Total = uint64(pagecount * pagesize)
 
-	self.Used = self.Total - (self.Free * pagesize)
-	self.ActualFree = (self.Free * pagesize) + (kern * pagesize)
+	self.Used = self.Total - self.Free
+	self.ActualFree = self.Free + (kern * pagesize)
 	self.ActualUsed = self.Used - (kern * pagesize)
 
 	return nil
