@@ -13,7 +13,11 @@ const output_format = "%-15s %4s %4s %5s %4s %-15s\n"
 
 func main() {
 	fslist := gosigar.FileSystemList{}
-	fslist.Get()
+	err := fslist.Get()
+	if err != nil {
+		fmt.Printf("Failed to get list of filesystems: %v", err)
+		os.Exit(-1)
+	}
 
 	fmt.Fprintf(os.Stdout, output_format,
 		"Filesystem", "Size", "Used", "Avail", "Use%", "Mounted on")

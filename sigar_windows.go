@@ -155,9 +155,9 @@ func (self *CpuList) Get() error {
 }
 
 func (self *FileSystemList) Get() error {
-	drives, err := windows.GetLogicalDriveStrings()
+	drives, err := windows.GetMountedVolumes()
 	if err != nil {
-		return errors.Wrap(err, "GetLogicalDriveStrings failed")
+		return errors.Wrap(err, "GetMountedVolumes failed")
 	}
 
 	for _, drive := range drives {
