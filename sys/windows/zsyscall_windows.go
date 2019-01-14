@@ -60,7 +60,6 @@ var (
 	procFindNextVolumeW                  = modkernel32.NewProc("FindNextVolumeW")
 	procFindVolumeClose                  = modkernel32.NewProc("FindVolumeClose")
 	procGetVolumePathNamesForVolumeNameW = modkernel32.NewProc("GetVolumePathNamesForVolumeNameW")
-	procQueryDosDeviceW                  = modkernel32.NewProc("QueryDosDeviceW")
 )
 
 func _GlobalMemoryStatusEx(buffer *MemoryStatusEx) (err error) {
@@ -339,27 +338,6 @@ func _GetVolumePathNamesForVolumeName(volumeName string, buffer *uint16, bufferS
 
 func __GetVolumePathNamesForVolumeName(volumeName *uint16, buffer *uint16, bufferSize uint32, length *uint32) (err error) {
 	r1, _, e1 := syscall.Syscall6(procGetVolumePathNamesForVolumeNameW.Addr(), 4, uintptr(unsafe.Pointer(volumeName)), uintptr(unsafe.Pointer(buffer)), uintptr(bufferSize), uintptr(unsafe.Pointer(length)), 0, 0)
-	if r1 == 0 {
-		if e1 != 0 {
-			err = errnoErr(e1)
-		} else {
-			err = syscall.EINVAL
-		}
-	}
-	return
-}
-
-func _QueryDosDevice(volumeName string, deviceName *uint16, size uint32) (err error) {
-	var _p0 *uint16
-	_p0, err = syscall.UTF16PtrFromString(volumeName)
-	if err != nil {
-		return
-	}
-	return __QueryDosDevice(_p0, deviceName, size)
-}
-
-func __QueryDosDevice(volumeName *uint16, deviceName *uint16, size uint32) (err error) {
-	r1, _, e1 := syscall.Syscall(procQueryDosDeviceW.Addr(), 3, uintptr(unsafe.Pointer(volumeName)), uintptr(unsafe.Pointer(deviceName)), uintptr(size))
 	if r1 == 0 {
 		if e1 != 0 {
 			err = errnoErr(e1)

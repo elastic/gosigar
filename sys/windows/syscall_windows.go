@@ -2,7 +2,6 @@ package windows
 
 import (
 	"fmt"
-	"strings"
 	"syscall"
 	"time"
 	"unsafe"
@@ -155,9 +154,33 @@ func GetLogicalDriveStrings() ([]string, error) {
 	return UTF16SliceToStringSlice(buffer), nil
 }
 
-// GetMountedVolumes returns a list of mounted volumes in the system.
+// GetAccessPaths returns the list of access paths for volumes in the system.
+func GetAccessPaths() ([]string, error) {
+	volumes, err := GetVolumes()
+	if err != nil {
+		return nil, errors.Wrap(err, "GetVolumes failed")
+	}
+
+	var paths []string
+	for _, volumeName := range volumes {
+		volumePaths, err := GetVolumePathsForVolume(volumeName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to get list of access paths for volume '%s'", volumeName)
+		}
+		if len(volumePaths) == 0 {
+			continue
+		}
+
+		// Get only the first path
+		paths = append(paths, volumePaths[0])
+	}
+
+	return paths, nil
+}
+
+// GetVolumes returs the list of volumes in the system
 // https://docs.microsoft.com/es-es/windows/desktop/api/fileapi/nf-fileapi-findfirstvolumew
-func GetMountedVolumes() ([]string, error) {
+func GetVolumes() ([]string, error) {
 	buffer := make([]uint16, MAX_PATH)
 
 	var volumes []string
@@ -169,23 +192,7 @@ func GetMountedVolumes() ([]string, error) {
 	defer _FindVolumeClose(h)
 
 	for {
-		volumeName := syscall.UTF16ToString(buffer)
-
-		paths, err := GetVolumePathsForVolume(volumeName)
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to get list of access paths for volume '%s'", volumeName)
-		}
-		if len(paths) > 0 {
-			// Get only the shortest path
-			path := paths[0]
-			for _, p := range paths[0:] {
-				if len(p) < len(path) {
-					path = p
-				}
-			}
-
-			volumes = append(volumes, path)
-		}
+		volumes = append(volumes, syscall.UTF16ToString(buffer))
 
 		err = _FindNextVolume(h, &buffer[0], uint32(len(buffer)))
 		if err != nil {
@@ -197,21 +204,6 @@ func GetMountedVolumes() ([]string, error) {
 	}
 
 	return volumes, nil
-}
-
-// GetDeviceNameForVolume returns the DOS name of a volume
-// https://docs.microsoft.com/en-us/windows/desktop/api/FileAPI/nf-fileapi-querydosdevicew
-func GetDeviceNameForVolume(volumeName string) (string, error) {
-	// QueryDosDeviceW doesn't want the path symbols, just the name
-	dosVolumeName := strings.TrimSuffix(strings.TrimPrefix(volumeName, `\\?`), `\`)
-
-	buffer := make([]uint16, MAX_PATH+1)
-	err := _QueryDosDevice(dosVolumeName, &buffer[0], uint32(len(buffer)))
-	if err != nil {
-		return "", errors.Wrap(err, "QueryDosDeviceW failed")
-	}
-
-	return syscall.UTF16ToString(buffer), nil
 }
 
 // GetVolumePathsForVolume returns the list of volume paths for a volume
@@ -475,4 +467,3 @@ func UTF16SliceToStringSlice(buffer []uint16) []string {
 //sys _FindNextVolume(handle syscall.Handle, volumeName *uint16, size uint32) (err error) = kernel32.FindNextVolumeW
 //sys _FindVolumeClose(handle syscall.Handle) (err error) = kernel32.FindVolumeClose
 //sys _GetVolumePathNamesForVolumeName(volumeName string, buffer *uint16, bufferSize uint32, length *uint32) (err error) = kernel32.GetVolumePathNamesForVolumeNameW
-//sys _QueryDosDevice(volumeName string, deviceName *uint16, size uint32) (err error) = kernel32.QueryDosDeviceW
