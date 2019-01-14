@@ -181,7 +181,7 @@ func GetAccessPaths() ([]string, error) {
 // GetVolumes returs the list of volumes in the system
 // https://docs.microsoft.com/es-es/windows/desktop/api/fileapi/nf-fileapi-findfirstvolumew
 func GetVolumes() ([]string, error) {
-	buffer := make([]uint16, MAX_PATH)
+	buffer := make([]uint16, MAX_PATH+1)
 
 	var volumes []string
 
