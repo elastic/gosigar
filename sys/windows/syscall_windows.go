@@ -444,7 +444,7 @@ func UTF16SliceToStringSlice(buffer []uint16) []string {
 // Use "GOOS=windows go generate -v -x ." to generate the source.
 
 // Add -trace to enable debug prints around syscalls.
-//go:generate go run $GOROOT/src/syscall/mksyscall_windows.go -output zsyscall_windows.go syscall_windows.go
+//go:generate go run $GOROOT/src/syscall/mksyscall_windows.go -systemdll=false -output zsyscall_windows.go syscall_windows.go
 
 // Windows API calls
 //sys   _GlobalMemoryStatusEx(buffer *MemoryStatusEx) (err error) = kernel32.GlobalMemoryStatusEx
