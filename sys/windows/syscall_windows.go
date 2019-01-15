@@ -178,7 +178,7 @@ func GetAccessPaths() ([]string, error) {
 	return paths, nil
 }
 
-// GetVolumes returs the list of volumes in the system
+// GetVolumes returs the list of volumes in the system.
 // https://docs.microsoft.com/es-es/windows/desktop/api/fileapi/nf-fileapi-findfirstvolumew
 func GetVolumes() ([]string, error) {
 	buffer := make([]uint16, MAX_PATH+1)
@@ -206,7 +206,7 @@ func GetVolumes() ([]string, error) {
 	return volumes, nil
 }
 
-// GetVolumePathsForVolume returns the list of volume paths for a volume
+// GetVolumePathsForVolume returns the list of volume paths for a volume.
 // https://docs.microsoft.com/en-us/windows/desktop/api/FileAPI/nf-fileapi-getvolumepathnamesforvolumenamew
 func GetVolumePathsForVolume(volumeName string) ([]string, error) {
 	var length uint32
@@ -216,7 +216,7 @@ func GetVolumePathsForVolume(volumeName string) ([]string, error) {
 	}
 	if length == 0 {
 		// Not mounted, no paths, that's ok
-		return []string{}, nil
+		return nil, nil
 	}
 
 	buffer := make([]uint16, length*(MAX_PATH+1))
@@ -463,7 +463,7 @@ func UTF16SliceToStringSlice(buffer []uint16) []string {
 //sys   _LookupPrivilegeName(systemName string, luid *int64, buffer *uint16, size *uint32) (err error) = advapi32.LookupPrivilegeNameW
 //sys   _LookupPrivilegeValue(systemName string, name string, luid *int64) (err error) = advapi32.LookupPrivilegeValueW
 //sys   _AdjustTokenPrivileges(token syscall.Token, releaseAll bool, input *byte, outputSize uint32, output *byte, requiredSize *uint32) (success bool, err error) [true] = advapi32.AdjustTokenPrivileges
-//sys  _FindFirstVolume(volumeName *uint16, size uint32) (handle syscall.Handle, err error) = kernel32.FindFirstVolumeW
-//sys _FindNextVolume(handle syscall.Handle, volumeName *uint16, size uint32) (err error) = kernel32.FindNextVolumeW
-//sys _FindVolumeClose(handle syscall.Handle) (err error) = kernel32.FindVolumeClose
-//sys _GetVolumePathNamesForVolumeName(volumeName string, buffer *uint16, bufferSize uint32, length *uint32) (err error) = kernel32.GetVolumePathNamesForVolumeNameW
+//sys   _FindFirstVolume(volumeName *uint16, size uint32) (handle syscall.Handle, err error) = kernel32.FindFirstVolumeW
+//sys  _FindNextVolume(handle syscall.Handle, volumeName *uint16, size uint32) (err error) = kernel32.FindNextVolumeW
+//sys  _FindVolumeClose(handle syscall.Handle) (err error) = kernel32.FindVolumeClose
+//sys  _GetVolumePathNamesForVolumeName(volumeName string, buffer *uint16, bufferSize uint32, length *uint32) (err error) = kernel32.GetVolumePathNamesForVolumeNameW
