@@ -49,9 +49,9 @@ func GetLoadAverages() (float64, float64, float64, error) {
 	addLoadSample(currentLoad)
 
 	// Calculate 1-minute, 5-minute, and 15-minute load averages
-	one = getLoadAverage(1 * time.Duration)
-	five = getLoadAverage(5 * time.Duration)
-	fifteen = getLoadAverage(15 * time.Duration)
+	one := getLoadAverage(1 * time.Duration)
+	five := getLoadAverage(5 * time.Duration)
+	fifteen := getLoadAverage(15 * time.Duration)
 
 	return one, five, fifteen, nil
 }
