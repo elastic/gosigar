@@ -61,10 +61,10 @@ func getCurrentLoad() (int, error) {
 	q := wmi.CreateQuery(&dst, "")
 	err := wmi.Query(q, &dst)
 	if err != nil {
-		return errors.Wrap(err, "wmi query for Win32_PerfFormattedData_PerfOS_System failed")
+		return 0, errors.Wrap(err, "wmi query for Win32_PerfFormattedData_PerfOS_System failed")
 	}
 	if len(dst) != 1 {
-		return errors.New("wmi query for Win32_PerfFormattedData_PerfOS_System failed")
+		return 0, errors.New("wmi query for Win32_PerfFormattedData_PerfOS_System failed")
 	}
 
 	currentLoad := dst[0].ProcessorQueueLength
