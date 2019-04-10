@@ -89,7 +89,7 @@ func addLoadSample(value int) {
 	loadSamples.samples = newLoadSamples
 }
 
-func getAverageLoad(avergeDuration time.Duration) float64 {
+func getLoadAverage(avergeDuration time.Duration) float64 {
 	loadSamples.lock.RLock()
 	defer loadSamples.lock.RUnlock()
 
