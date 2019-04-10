@@ -40,7 +40,6 @@ func init() {
 // system. Load averages are based on processor queue lengths, which is the number of processes
 // waiting for time on the CPU. This function also samples the current load average when called.
 func GetLoadAverages() (float64, float64, float64, error) {
-
 	// Sample current load
 	currentLoad, err := getCurrentLoad()
 	if err != nil {
