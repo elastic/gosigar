@@ -41,6 +41,23 @@ func init() {
 // system. Load averages are based on processor queue lengths, which is the number of processes
 // waiting for time on the CPU. This function also samples the current load average when called.
 func GetLoadAverages() (float64, float64, float64, error) {
+
+	// Sample current load
+	currentLoad, err := getCurrentLoad()
+	if err != nil {
+		return err
+	}
+	addLoadSample(currentLoad)
+
+	// Calculate 1-minute, 5-minute, and 15-minute load averages
+	one = getLoadAverage(1 * time.Duration)
+	five = getLoadAverage(5 * time.Duration)
+	fifteen = getLoadAverage(15 * time.Duration)
+
+	return one, five, fifteen, nil
+}
+
+func getCurrentLoad() int, error {
 	var dst []win32_PerfFormattedData_PerfOS_System
 	q := wmi.CreateQuery(&dst, "")
 	err := wmi.Query(q, &dst)
@@ -52,13 +69,7 @@ func GetLoadAverages() (float64, float64, float64, error) {
 	}
 
 	currentLoad := dst[0].ProcessorQueueLength
-	addLoadSample(currentLoad)
-
-	one = getLoadAverage(1 * time.Duration)
-	five = getLoadAverage(5 * time.Duration)
-	fifteen = getLoadAverage(15 * time.Duration)
-
-	return one, five, fifteen, nil
+	return currentLoad
 }
 
 func addLoadSample(value int) {
