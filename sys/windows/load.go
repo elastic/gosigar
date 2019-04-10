@@ -44,7 +44,7 @@ func GetLoadAverages() (float64, float64, float64, error) {
 	// Sample current load
 	currentLoad, err := getCurrentLoad()
 	if err != nil {
-		return err
+		return 0, 0, 0, err
 	}
 	addLoadSample(currentLoad)
 
