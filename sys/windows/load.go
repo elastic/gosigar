@@ -55,7 +55,7 @@ func GetLoadAverages() (float64, float64, float64, error) {
 	return one, five, fifteen, nil
 }
 
-func getCurrentLoad() int, error {
+func getCurrentLoad() (int, error) {
 	var dst []win32_PerfFormattedData_PerfOS_System
 	q := wmi.CreateQuery(&dst, "")
 	err := wmi.Query(q, &dst)
