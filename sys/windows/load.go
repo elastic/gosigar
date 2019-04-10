@@ -49,9 +49,9 @@ func GetLoadAverages() (float64, float64, float64, error) {
 	addLoadSample(currentLoad)
 
 	// Calculate 1-minute, 5-minute, and 15-minute load averages
-	one := getLoadAverage(1 * time.Duration)
-	five := getLoadAverage(5 * time.Duration)
-	fifteen := getLoadAverage(15 * time.Duration)
+	one := getLoadAverage(1 * time.Minute)
+	five := getLoadAverage(5 * time.Minute)
+	fifteen := getLoadAverage(15 * time.Minute)
 
 	return one, five, fifteen, nil
 }
@@ -72,15 +72,15 @@ func getCurrentLoad() (int, error) {
 }
 
 func addLoadSample(value int) {
-	now := time.Now
+	now := time.Now()
 
 	loadSamples.lock.Lock()
 	defer loadSamples.lock.Unlock()
 
-	loadSamples.samples = append(loadSamples.samples, value)
+	loadSamples.samples = append(loadSamples.samples, loadSample{now, value})
 
 	// Cleanup old samples
-	newLoadSamples = []loadSample{}
+	newLoadSamples := []loadSample{}
 	for _, sample := range loadSamples.samples {
 		if sample.timestamp.After(now.Add(-LOAD_HISTORY_DURATION)) {
 			newLoadSamples = append(newLoadSamples, sample)
