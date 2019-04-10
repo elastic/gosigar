@@ -28,8 +28,7 @@ const (
 )
 
 var (
-	// loadSamples is a list of loadSamples. The list keeps samples up to
-	// LOAD_HISTORY_DURATION old.
+	// loadSamples keeps samples up to LOAD_HISTORY_DURATION old.
 	loadSamples loadSamplesType
 )
 
