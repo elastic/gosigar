@@ -55,7 +55,16 @@ func init() {
 }
 
 func (self *LoadAverage) Get() error {
-	return ErrNotImplemented{runtime.GOOS}
+	one, five, fifteen, err := windows.GetLoadAverages()
+	if err != nil {
+		return err
+	}
+
+	self.One = one
+	self.Five = five
+	self.Fifteen = fifteen
+
+	return nil
 }
 
 func (self *FDUsage) Get() error {
