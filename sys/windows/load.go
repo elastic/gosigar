@@ -3,6 +3,7 @@
 package windows
 
 import (
+	"sync"
 	"time"
 
 	"github.com/StackExchange/wmi"
@@ -20,7 +21,7 @@ type loadSample struct {
 
 type loadSamplesType struct {
 	samples []loadSample
-	lock    mutex.RWMutex
+	lock    sync.RWMutex
 }
 
 const (
