@@ -4,7 +4,9 @@ package windows
 
 import (
 	"time"
+
 	"github.com/StackExchange/wmi"
+	"github.com/pkg/errors"
 )
 
 type win32_PerfFormattedData_PerfOS_System struct {
@@ -38,7 +40,7 @@ func init() {
 // GetLoadAverages returns the 1-minute, 5-minute, and 15-minute load averages for a Windows
 // system. Load averages are based on processor queue lengths, which is the number of processes
 // waiting for time on the CPU. This function also samples the current load average when called.
-function GetLoadAverages() (float64, float64, float64, error) {
+func GetLoadAverages() (float64, float64, float64, error) {
 	var dst []win32_PerfFormattedData_PerfOS_System
 	q := wmi.CreateQuery(&dst, "")
 	err := wmi.Query(q, &dst)
