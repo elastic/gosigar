@@ -12,7 +12,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/StackExchange/wmi"
 	"github.com/elastic/gosigar/sys/windows"
 	"github.com/pkg/errors"
 )
@@ -83,11 +82,12 @@ func (self *Uptime) Get() error {
 	bootTimeLock.Lock()
 	defer bootTimeLock.Unlock()
 	if bootTime == nil {
-		os, err := getWin32OperatingSystem()
+		uptime, err := windows.GetTickCount64()
 		if err != nil {
 			return errors.Wrap(err, "failed to get boot time using WMI")
 		}
-		bootTime = &os.LastBootUpTime
+		var boot = time.Unix(int64(uptime), 0)
+		bootTime = &boot
 	}
 
 	self.Length = time.Since(*bootTime).Seconds()
@@ -251,7 +251,7 @@ func getProcStatus(pid int) (RunState, error) {
 	var exitCode uint32
 	err = syscall.GetExitCodeProcess(handle, &exitCode)
 	if err != nil {
-		return RunStateUnknown, errors.Wrapf(err, "GetExitCodeProcess failed for pid=%v")
+		return RunStateUnknown, errors.Wrapf(err, "GetExitCodeProcess failed for pid=%v", pid)
 	}
 
 	if exitCode == 259 { //still active
@@ -371,15 +371,33 @@ func (self *ProcArgs) Get(pid int) error {
 	if !version.IsWindowsVistaOrGreater() {
 		return ErrNotImplemented{runtime.GOOS}
 	}
-
-	process, err := getWin32Process(int32(pid))
+	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess|windows.PROCESS_VM_READ, false, uint32(pid))
 	if err != nil {
-		return errors.Wrapf(err, "ProcArgs failed for pid=%v", pid)
+		return errors.Wrapf(err, "OpenProcess failed for pid=%v", pid)
 	}
+	defer syscall.CloseHandle(handle)
+	var args []string
+	pbi, err := windows.NtQueryProcessBasicInformation(handle)
+	if err != nil {
+		return errors.Wrapf(err, "NtQueryProcessBasicInformation failed for pid=%v", pid)
+	}
+	if err != nil {
+		return nil
+	}
+	userProcParams, err := windows.GetUserProcessParams(handle, pbi)
+	if err != nil {
+		return nil
+	}
+	if argsW, err := windows.ReadProcessUnicodeString(handle, &userProcParams.CommandLine); err == nil {
+		args, err = windows.ByteSliceToStringSlice(argsW)
+		if err != nil {
+			args = nil
+		}
+	}
+	var process = Win32_Process{CommandLine: &args[0]}
 	if process.CommandLine != nil {
 		self.List = []string{*process.CommandLine}
 	}
-
 	return nil
 }
 
@@ -394,35 +412,6 @@ func (self *FileSystemUsage) Get(path string) error {
 	self.Used = self.Total - self.Free
 	self.Avail = freeBytesAvailable
 	return nil
-}
-
-// getWin32Process gets information about the process with the given process ID.
-// It uses a WMI query to get the information from the local system.
-func getWin32Process(pid int32) (Win32_Process, error) {
-	var dst []Win32_Process
-	query := fmt.Sprintf("WHERE ProcessId = %d", pid)
-	q := wmi.CreateQuery(&dst, query)
-	err := wmi.Query(q, &dst)
-	if err != nil {
-		return Win32_Process{}, fmt.Errorf("could not get Win32_Process %s: %v", query, err)
-	}
-	if len(dst) < 1 {
-		return Win32_Process{}, fmt.Errorf("could not get Win32_Process %s: Process not found", query)
-	}
-	return dst[0], nil
-}
-
-func getWin32OperatingSystem() (Win32_OperatingSystem, error) {
-	var dst []Win32_OperatingSystem
-	q := wmi.CreateQuery(&dst, "")
-	err := wmi.Query(q, &dst)
-	if err != nil {
-		return Win32_OperatingSystem{}, errors.Wrap(err, "wmi query for Win32_OperatingSystem failed")
-	}
-	if len(dst) != 1 {
-		return Win32_OperatingSystem{}, errors.New("wmi query for Win32_OperatingSystem failed")
-	}
-	return dst[0], nil
 }
 
 func (self *Rusage) Get(who int) error {

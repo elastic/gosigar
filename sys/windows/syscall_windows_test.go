@@ -181,3 +181,48 @@ func TestNtQueryProcessBasicInformation(t *testing.T) {
 
 	t.Logf("NtQueryProcessBasicInformation: %+v", info)
 }
+
+func TestGetTickCount64(t *testing.T) {
+	uptime, err := GetTickCount64()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotZero(t, uptime)
+}
+
+func TestGetUserProcessParams(t *testing.T) {
+	h, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, false, uint32(syscall.Getpid()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := NtQueryProcessBasicInformation(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	userProc, err := GetUserProcessParams(h, info)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.EqualValues(t, os.Getpid(), info.UniqueProcessID)
+	assert.EqualValues(t, os.Getppid(), info.InheritedFromUniqueProcessID)
+	assert.NotEmpty(t, userProc.CommandLine)
+}
+func TestReadProcessUnicodeString(t *testing.T) {
+	h, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, false, uint32(syscall.Getpid()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := NtQueryProcessBasicInformation(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	userProc, err := GetUserProcessParams(h, info)
+	if err != nil {
+		t.Fatal(err)
+	}
+	read, err := ReadProcessUnicodeString(h, &userProc.CommandLine)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEmpty(t, read)
+}
