@@ -259,3 +259,35 @@ func TestReadProcessMemory(t *testing.T) {
 	assert.NotEmpty(t, nRead)
 	assert.EqualValues(t, nRead, uintptr(pebSize))
 }
+func TestGetAccessPaths(t *testing.T) {
+	paths, err := GetAccessPaths()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEmpty(t, paths)
+	assert.True(t, len(paths) >= 1)
+}
+
+func TestGetVolumes(t *testing.T) {
+	paths, err := GetVolumes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEmpty(t, paths)
+	assert.True(t, len(paths) >= 1)
+}
+
+func TestGetVolumePathsForVolume(t *testing.T) {
+	volumes, err := GetVolumes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotNil(t, volumes)
+	assert.True(t, len(volumes) >= 1)
+	volumePath, err := GetVolumePathsForVolume(volumes[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotNil(t, volumePath)
+	assert.True(t, len(volumePath) >= 1)
+}
