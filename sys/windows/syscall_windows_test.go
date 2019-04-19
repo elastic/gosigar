@@ -210,6 +210,15 @@ func TestGetUserProcessParams(t *testing.T) {
 	assert.EqualValues(t, os.Getppid(), info.InheritedFromUniqueProcessID)
 	assert.NotEmpty(t, userProc.CommandLine)
 }
+
+func TestGetUserProcessParamsInvalidHandle(t *testing.T) {
+	var handle syscall.Handle
+	var info = ProcessBasicInformation{PebBaseAddress: uintptr(0)}
+	userProc, err := GetUserProcessParams(handle, info)
+	assert.EqualValues(t, err.Error(), "The handle is invalid.")
+	assert.Empty(t, userProc)
+}
+
 func TestReadProcessUnicodeString(t *testing.T) {
 	h, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, false, uint32(syscall.Getpid()))
 	if err != nil {
@@ -229,6 +238,13 @@ func TestReadProcessUnicodeString(t *testing.T) {
 	}
 	assert.NoError(t, err)
 	assert.NotEmpty(t, read)
+}
+func TestReadProcessUnicodeStringInvalidHandle(t *testing.T) {
+	var handle syscall.Handle
+	var cmd = UnicodeString{Size: 5, MaximumLength: 400, Buffer: 400}
+	read, err := ReadProcessUnicodeString(handle, &cmd)
+	assert.EqualValues(t, err.Error(), "The handle is invalid.")
+	assert.Empty(t, read)
 }
 
 func TestByteSliceToStringSlice(t *testing.T) {

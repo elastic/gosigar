@@ -84,7 +84,7 @@ func (self *Uptime) Get() error {
 	if bootTime == nil {
 		uptime, err := windows.GetTickCount64()
 		if err != nil {
-			return errors.Wrap(err, "failed to get boot time using WMI")
+			return errors.Wrap(err, "failed to get boot time using win32 api")
 		}
 		var boot = time.Unix(int64(uptime), 0)
 		bootTime = &boot
