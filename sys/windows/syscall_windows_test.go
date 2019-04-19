@@ -240,6 +240,13 @@ func TestByteSliceToStringSlice(t *testing.T) {
 	assert.NotEmpty(t, hes)
 }
 
+func TestByteSliceToStringSliceEmptyBytes(t *testing.T) {
+	b := make([]byte, 0)
+	hes, err := ByteSliceToStringSlice(b)
+	assert.NoError(t, err)
+	assert.Empty(t, hes)
+}
+
 func TestReadProcessMemory(t *testing.T) {
 	h, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, false, uint32(syscall.Getpid()))
 	if err != nil {
@@ -259,6 +266,27 @@ func TestReadProcessMemory(t *testing.T) {
 	assert.NotEmpty(t, nRead)
 	assert.EqualValues(t, nRead, uintptr(pebSize))
 }
+
+// A zero-byte read is a no-op, no error is returned.
+func TestReadProcessMemoryZeroByteRead(t *testing.T) {
+	peb := make([]byte, 0)
+	var h syscall.Handle
+	var address uintptr
+	nRead, err := ReadProcessMemory(h, address, peb)
+	assert.NoError(t, err)
+	assert.Empty(t, nRead)
+}
+
+func TestReadProcessMemoryInvalidHandler(t *testing.T) {
+	peb := make([]byte, 10)
+	var h syscall.Handle
+	var address uintptr
+	nRead, err := ReadProcessMemory(h, address, peb)
+	assert.Error(t, err)
+	assert.EqualValues(t, err.Error(), "The handle is invalid.")
+	assert.Empty(t, nRead)
+}
+
 func TestGetAccessPaths(t *testing.T) {
 	paths, err := GetAccessPaths()
 	if err != nil {
