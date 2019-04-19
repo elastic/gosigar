@@ -376,7 +376,6 @@ func (self *ProcArgs) Get(pid int) error {
 		return errors.Wrapf(err, "OpenProcess failed for pid=%v", pid)
 	}
 	defer syscall.CloseHandle(handle)
-	var args []string
 	pbi, err := windows.NtQueryProcessBasicInformation(handle)
 	if err != nil {
 		return errors.Wrapf(err, "NtQueryProcessBasicInformation failed for pid=%v", pid)
@@ -388,6 +387,7 @@ func (self *ProcArgs) Get(pid int) error {
 	if err != nil {
 		return nil
 	}
+	var args []string
 	if argsW, err := windows.ReadProcessUnicodeString(handle, &userProcParams.CommandLine); err == nil {
 		args, err = windows.ByteSliceToStringSlice(argsW)
 		if err != nil {

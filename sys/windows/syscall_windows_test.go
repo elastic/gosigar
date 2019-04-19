@@ -1,10 +1,12 @@
 package windows
 
 import (
+	"encoding/binary"
 	"os"
 	"runtime"
 	"syscall"
 	"testing"
+	"unsafe"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -203,6 +205,7 @@ func TestGetUserProcessParams(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, err)
 	assert.EqualValues(t, os.Getpid(), info.UniqueProcessID)
 	assert.EqualValues(t, os.Getppid(), info.InheritedFromUniqueProcessID)
 	assert.NotEmpty(t, userProc.CommandLine)
@@ -224,5 +227,35 @@ func TestReadProcessUnicodeString(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	assert.NoError(t, err)
 	assert.NotEmpty(t, read)
+}
+
+func TestByteSliceToStringSlice(t *testing.T) {
+	cmd := syscall.GetCommandLine()
+	b := make([]byte, unsafe.Sizeof(cmd))
+	binary.LittleEndian.PutUint16(b, *cmd)
+	hes, err := ByteSliceToStringSlice(b)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, hes)
+}
+
+func TestReadProcessMemory(t *testing.T) {
+	h, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION|PROCESS_VM_READ, false, uint32(syscall.Getpid()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := NtQueryProcessBasicInformation(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pebSize := 0x20 + 8
+	if unsafe.Sizeof(uintptr(0)) == 4 {
+		pebSize = 0x10 + 8
+	}
+	peb := make([]byte, pebSize)
+	nRead, err := ReadProcessMemory(h, info.PebBaseAddress, peb)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, nRead)
+	assert.EqualValues(t, nRead, uintptr(pebSize))
 }
