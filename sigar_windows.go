@@ -16,21 +16,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Win32_Process represents a process on the Windows operating system. If
-// additional fields are added here (that match the Windows struct) they will
-// automatically be populated when calling getWin32Process.
-// https://msdn.microsoft.com/en-us/library/windows/desktop/aa394372(v=vs.85).aspx
-type Win32_Process struct {
-	CommandLine *string
-}
-
-// Win32_OperatingSystem WMI class represents a Windows-based operating system
-// installed on a computer.
-// https://msdn.microsoft.com/en-us/library/windows/desktop/aa394239(v=vs.85).aspx
-type Win32_OperatingSystem struct {
-	LastBootUpTime time.Time
-}
-
 var (
 	// version is Windows version of the host OS.
 	version = windows.GetWindowsVersion()
@@ -387,16 +372,11 @@ func (self *ProcArgs) Get(pid int) error {
 	if err != nil {
 		return nil
 	}
-	var args []string
 	if argsW, err := windows.ReadProcessUnicodeString(handle, &userProcParams.CommandLine); err == nil {
-		args, err = windows.ByteSliceToStringSlice(argsW)
+		self.List, err = windows.ByteSliceToStringSlice(argsW)
 		if err != nil {
-			args = nil
+			return err
 		}
-	}
-	var process = Win32_Process{CommandLine: &args[0]}
-	if process.CommandLine != nil {
-		self.List = []string{*process.CommandLine}
 	}
 	return nil
 }

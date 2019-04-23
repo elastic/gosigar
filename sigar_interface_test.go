@@ -123,10 +123,11 @@ func TestProcTime(t *testing.T) {
 }
 
 func TestProcArgs(t *testing.T) {
-	args := ProcArgs{}
-	if assert.NoError(t, args.Get(os.Getppid())) {
-		assert.NotEmpty(t, args.List)
+	procArgs := ProcArgs{}
+	if assert.NoError(t, procArgs.Get(os.Getppid())) {
+		assert.NotEmpty(t, procArgs.List)
 	}
+	assert.Error(t, procArgs.Get(invalidPid))
 }
 
 func TestProcEnv(t *testing.T) {

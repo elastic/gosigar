@@ -258,9 +258,9 @@ func TestByteSliceToStringSlice(t *testing.T) {
 
 func TestByteSliceToStringSliceEmptyBytes(t *testing.T) {
 	b := make([]byte, 0)
-	hes, err := ByteSliceToStringSlice(b)
+	cmd, err := ByteSliceToStringSlice(b)
 	assert.NoError(t, err)
-	assert.Empty(t, hes)
+	assert.Empty(t, cmd)
 }
 
 func TestReadProcessMemory(t *testing.T) {
