@@ -20,6 +20,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Added missing runtime import for FreeBSD. #104
 - Handle nil command line in Windows processes. #110
+- Replaced the WMI queries with win32 apis due to high CPU usage. #11840
 
 ## [0.9.0]
 

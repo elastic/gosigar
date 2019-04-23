@@ -127,7 +127,7 @@ func TestProcArgs(t *testing.T) {
 	if assert.NoError(t, procArgs.Get(os.Getppid())) {
 		assert.NotEmpty(t, procArgs.List)
 	}
-	assert.Error(t, procArgs.Get(invalidPid))
+	assert.Error(t, skipNotImplemented(t, procArgs.Get(invalidPid), "darwin"))
 }
 
 func TestProcEnv(t *testing.T) {
