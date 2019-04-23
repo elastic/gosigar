@@ -100,7 +100,6 @@ func TestProcState(t *testing.T) {
 		assert.Equal(t, u.Username, state.Username)
 		assert.True(t, state.Ppid > 0, "ppid=%v is non-positive", state.Ppid)
 	}
-
 	assert.Error(t, state.Get(invalidPid))
 }
 
@@ -126,6 +125,9 @@ func TestProcArgs(t *testing.T) {
 	procArgs := ProcArgs{}
 	if assert.NoError(t, procArgs.Get(os.Getppid())) {
 		assert.NotEmpty(t, procArgs.List)
+	}
+	if runtime.GOOS != "darwin" {
+		assert.Error(t, procArgs.Get(invalidPid))
 	}
 }
 

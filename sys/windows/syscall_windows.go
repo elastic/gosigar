@@ -22,11 +22,10 @@ const (
 	PROCESS_QUERY_LIMITED_INFORMATION uint32 = 0x1000
 	PROCESS_VM_READ                   uint32 = 0x0010
 )
-const (
-	// SizeOfRtlUserProcessParameters gives the size
-	// of the RtlUserProcessParameters struct.
-	SizeOfRtlUserProcessParameters = unsafe.Sizeof(RtlUserProcessParameters{})
-)
+
+// SizeOfRtlUserProcessParameters gives the size
+// of the RtlUserProcessParameters struct.
+const SizeOfRtlUserProcessParameters = unsafe.Sizeof(RtlUserProcessParameters{})
 
 // MAX_PATH is the maximum length for a path in Windows.
 // https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx

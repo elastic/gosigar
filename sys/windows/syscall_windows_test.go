@@ -31,7 +31,6 @@ func TestGetProcessMemoryInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	counters, err := GetProcessMemoryInfo(h)
 	if err != nil {
 		t.Fatal(err)
@@ -177,7 +176,7 @@ func TestNtQueryProcessBasicInformation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
+	defer syscall.CloseHandle(h)
 	assert.EqualValues(t, os.Getpid(), info.UniqueProcessID)
 	assert.EqualValues(t, os.Getppid(), info.InheritedFromUniqueProcessID)
 
@@ -205,6 +204,7 @@ func TestGetUserProcessParams(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer syscall.CloseHandle(h)
 	assert.NoError(t, err)
 	assert.EqualValues(t, os.Getpid(), info.UniqueProcessID)
 	assert.EqualValues(t, os.Getppid(), info.InheritedFromUniqueProcessID)
@@ -236,6 +236,7 @@ func TestReadProcessUnicodeString(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer syscall.CloseHandle(h)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, read)
 }
@@ -276,6 +277,7 @@ func TestReadProcessMemory(t *testing.T) {
 	if unsafe.Sizeof(uintptr(0)) == 4 {
 		pebSize = 0x10 + 8
 	}
+	defer syscall.CloseHandle(h)
 	peb := make([]byte, pebSize)
 	nRead, err := ReadProcessMemory(h, info.PebBaseAddress, peb)
 	assert.NoError(t, err)
