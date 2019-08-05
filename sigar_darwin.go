@@ -41,7 +41,7 @@ func (self *LoadAverage) Get() error {
 }
 
 func (self *Uptime) Get() error {
-	tv := syscall.Timeval32{}
+	tv := syscall.Timeval{}
 
 	if err := sysctlbyname("kern.boottime", &tv); err != nil {
 		return err
