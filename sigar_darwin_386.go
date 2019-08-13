@@ -1,5 +1,10 @@
 package gosigar
 
+import (
+	"syscall"
+	"time"
+)
+
 func (self *Uptime) Get() error {
 	tv := syscall.Timeval{}
 
