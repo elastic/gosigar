@@ -12,6 +12,8 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Load DLLs only from Windows system directory.
+
 ### Deprecated
 
 ## [0.10.4]
