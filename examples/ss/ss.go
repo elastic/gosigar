@@ -6,13 +6,12 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 	"syscall"
 	"text/tabwriter"
-	"time"
-
-	log "github.com/Sirupsen/logrus"
 
 	"github.com/elastic/gosigar/sys/linux"
 )
@@ -25,20 +24,12 @@ var (
 	diag  = fs.String("diag", "", "dump raw information about TCP sockets to FILE")
 )
 
-func enableLogger() {
-	log.SetOutput(os.Stderr)
-	log.SetLevel(log.DebugLevel)
-	log.SetFormatter(&log.TextFormatter{
-		FullTimestamp:   true,
-		TimestampFormat: time.RFC3339Nano,
-	})
-}
-
 func main() {
+	log.SetFlags(0)
 	fs.Parse(os.Args[1:])
 
-	if *debug {
-		enableLogger()
+	if !*debug {
+		log.SetOutput(ioutil.Discard)
 	}
 
 	if err := sockets(); err != nil {
@@ -75,12 +66,12 @@ func sockets() error {
 		diagWriter = f
 	}
 
-	log.Debugln("sending netlink request")
+	log.Println("sending netlink request")
 	msgs, err := linux.NetlinkInetDiagWithBuf(req, nil, diagWriter)
 	if err != nil {
 		return err
 	}
-	log.Debugf("received %d inet_diag_msg responses", len(msgs))
+	log.Printf("received %d inet_diag_msg responses", len(msgs))
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintln(w, strings.Join([]string{
