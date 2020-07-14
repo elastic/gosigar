@@ -6,6 +6,8 @@ import (
 	"unsafe"
 )
 
+// TODO (2020-07-14): Fix the unsafe pointer conversion. https://github.com/elastic/gosigar/issues/138
+//go:nocheckptr
 func bytePtrToString(ptr *int8) string {
 	bytes := (*[10000]byte)(unsafe.Pointer(ptr))
 
