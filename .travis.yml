@@ -28,5 +28,5 @@ script:
   - gofmt -l . | read && echo "Code differs from gofmt's style. Run 'gofmt -w .'" 1>&2 && exit 1 || true
   - go vet
   - go build
-  - go test -gcflags=-d=checkptr -v ./...
+  - go test -v ./...
   - for i in $(ls examples); do go build -o examples/$i/$i ./examples/$i; ./examples/$i/$i; done
