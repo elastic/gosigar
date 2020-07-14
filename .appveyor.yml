@@ -57,7 +57,7 @@ build_script:
 test_script:
   # Unit tests
   - ps: Add-AppveyorTest "Unit Tests" -Outcome Running
-  - go test -gcflags=-d=checkptr -v ./...
+  - go test -v ./...
   - ps: Update-AppveyorTest "Unit Tests" -Outcome Passed
   - ps: Add-AppveyorTest "Running Examples" -Outcome Running
   - .\examples\df\df.exe
