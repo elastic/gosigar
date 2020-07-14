@@ -39,7 +39,6 @@ install:
   - go version
   - go env
   - python --version
-  - go get github.com/elastic/beats/vendor/github.com/pierrre/gotestcover
 
 # To run your custom scripts instead of automatic MSBuild
 build_script:
@@ -58,8 +57,7 @@ build_script:
 test_script:
   # Unit tests
   - ps: Add-AppveyorTest "Unit Tests" -Outcome Running
-  - mkdir build\coverage
-  - gotestcover -v -coverprofile=build/coverage/unit.cov github.com/elastic/gosigar/...
+  - go test -v ./...
   - ps: Update-AppveyorTest "Unit Tests" -Outcome Passed
   - ps: Add-AppveyorTest "Running Examples" -Outcome Running
   - .\examples\df\df.exe
@@ -67,15 +65,6 @@ test_script:
   - .\examples\ps\ps.exe
   - .\examples\uptime\uptime.exe
   - ps: Update-AppveyorTest "Running Examples" -Outcome Passed
-
-after_test:
-  - go tool cover -html=build\coverage\unit.cov -o build\coverage\unit.html
-  - ps: Push-AppveyorArtifact build\coverage\unit.cov
-  - ps: Push-AppveyorArtifact build\coverage\unit.html
-  # Upload coverage report.
-  - "SET PATH=C:\\Python34;C:\\Python34\\Scripts;%PATH%"
-  - pip install codecov
-  - codecov -X gcov -f "build\coverage\unit.cov"
 
 # To disable deployment
 deploy: off
