@@ -5,11 +5,12 @@ os:
   - osx
 
 go:
-  - 1.10.x
-  - 1.14.x
+  - 1.11.x
+  - 1.15.x
 
 env:
   global:
+    - GO111MODULE=on
     - PROJ="github.com/elastic/gosigar"
 
 sudo: false
@@ -21,10 +22,8 @@ before_install:
   - export TRAVIS_BUILD_DIR=$HOME/gopath/src/${PROJ}
   - cd $HOME/gopath/src/${PROJ}
 
-install:
-  - go get -v -t -d ./...
-
 script:
+  - go mod tidy && git diff --exit-code
   - gofmt -l . | read && echo "Code differs from gofmt's style. Run 'gofmt -w .'" 1>&2 && exit 1 || true
   - go vet
   - go build
