@@ -31,33 +31,63 @@ type mount struct {
 type Reader struct {
 	// Mountpoint of the root filesystem. Defaults to / if not set. This can be
 	// useful for example if you mount / as /rootfs inside of a container.
-	rootfsMountpoint  string
-	ignoreRootCgroups bool              // Ignore a cgroup when its path is "/".
-	cgroupMountpoints map[string]string // Mountpoints for each subsystem (e.g. cpu, cpuacct, memory, blkio).
+	rootfsMountpoint         string
+	ignoreRootCgroups        bool // Ignore a cgroup when its path is "/".
+	cgroupsHierarchyOverride string
+	cgroupMountpoints        map[string]string // Mountpoints for each subsystem (e.g. cpu, cpuacct, memory, blkio).
+}
+
+// ReaderOptions holds options for NewReaderOptions.
+type ReaderOptions struct {
+	// RootfsMountpoint holds the mountpoint of the root filesystem.
+	//
+	// If unspecified, "/" is assumed.
+	RootfsMountpoint string
+
+	// IgnoreRootCgroups ignores cgroup subsystem with the path "/".
+	IgnoreRootCgroups bool
+
+	// CgroupsHierarchyOverride is an optional path override for cgroup
+	// subsystem paths. If non-empty, this will be used instead of the
+	// paths specified in /proc/<pid>/cgroup.
+	//
+	// This should be set to "/" when running within a Docker container,
+	// where the paths in /proc/<pid>/cgroup do not correspond to any
+	// paths under /sys/fs/cgroup.
+	CgroupsHierarchyOverride string
 }
 
 // NewReader creates and returns a new Reader.
 func NewReader(rootfsMountpoint string, ignoreRootCgroups bool) (*Reader, error) {
-	if rootfsMountpoint == "" {
-		rootfsMountpoint = "/"
+	return NewReaderOptions(ReaderOptions{
+		RootfsMountpoint:  rootfsMountpoint,
+		IgnoreRootCgroups: ignoreRootCgroups,
+	})
+}
+
+// NewReaderOptions creates and returns a new Reader with the given options.
+func NewReaderOptions(opts ReaderOptions) (*Reader, error) {
+	if opts.RootfsMountpoint == "" {
+		opts.RootfsMountpoint = "/"
 	}
 
 	// Determine what subsystems are supported by the kernel.
-	subsystems, err := SupportedSubsystems(rootfsMountpoint)
+	subsystems, err := SupportedSubsystems(opts.RootfsMountpoint)
 	if err != nil {
 		return nil, err
 	}
 
 	// Locate the mountpoints of those subsystems.
-	mountpoints, err := SubsystemMountpoints(rootfsMountpoint, subsystems)
+	mountpoints, err := SubsystemMountpoints(opts.RootfsMountpoint, subsystems)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Reader{
-		rootfsMountpoint:  rootfsMountpoint,
-		ignoreRootCgroups: ignoreRootCgroups,
-		cgroupMountpoints: mountpoints,
+		rootfsMountpoint:         opts.RootfsMountpoint,
+		ignoreRootCgroups:        opts.IgnoreRootCgroups,
+		cgroupsHierarchyOverride: opts.CgroupsHierarchyOverride,
+		cgroupMountpoints:        mountpoints,
 	}, nil
 }
 
@@ -86,11 +116,15 @@ func (r *Reader) GetStatsForProcess(pid int) (*Stats, error) {
 			continue
 		}
 
+		id := filepath.Base(path)
+		if r.cgroupsHierarchyOverride != "" {
+			path = r.cgroupsHierarchyOverride
+		}
 		mounts[interestedSubsystem] = mount{
 			subsystem:  interestedSubsystem,
 			mountpoint: subsystemMount,
+			id:         id,
 			path:       path,
-			id:         filepath.Base(path),
 			fullPath:   filepath.Join(subsystemMount, path),
 		}
 	}

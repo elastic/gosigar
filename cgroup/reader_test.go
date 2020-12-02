@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -44,4 +45,34 @@ func TestReaderGetStats(t *testing.T) {
 	}
 
 	t.Log(string(json))
+}
+
+func TestReaderGetStatsHierarchyOverride(t *testing.T) {
+	// In testdata/docker, process 1's cgroup paths have
+	// no corresponding paths under /sys/fs/cgroup/<subsystem>.
+	//
+	// Setting CgroupsHierarchyOverride means that we use
+	// the root cgroup path instead. This is intended to test
+	// the scenario where we're reading cgroup metrics from
+	// within a Docker container.
+
+	reader, err := NewReaderOptions(ReaderOptions{
+		RootfsMountpoint:         "testdata/docker",
+		IgnoreRootCgroups:        true,
+		CgroupsHierarchyOverride: "/",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	stats, err := reader.GetStatsForProcess(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats == nil {
+		t.Fatal("no cgroup stats found")
+	}
+
+	require.NotNil(t, stats.CPU)
+	assert.NotZero(t, stats.CPU.CFS.Shares)
 }
