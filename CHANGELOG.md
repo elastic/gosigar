@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add method of overriding the /sys/fs/cgroup hierarchy, for reading cgroup metrics inside Docker [#148](https://github.com/elastic/gosigar/pull/148)
+
 ### Fixed
 
 ### Changed
