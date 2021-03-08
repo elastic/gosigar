@@ -48,8 +48,34 @@ pipeline {
         agent {label "${PLATFORM}"}
         axes {
           axis {
+            name 'GO_VERSION'
+            values '1.15.8', '1.16'
+          }
+          axis {
             name 'PLATFORM'
             values 'macosx&&x86_64', 'macosx&&arm64', 'ubuntu-20 && immutable', 'windows-2012-r2 && windows-immutable'
+          }
+        }
+        excludes {
+          exclude {
+            axis {
+              name 'GO_VERSION'
+              values '1.15.8'
+            }
+            axis {
+              name 'ARCHITECTURE'
+              values 'macosx&&arm64'
+            }
+          }
+          exclude {
+            axis {
+              name 'GO_VERSION'
+              values '1.16'
+            }
+            axis {
+              name 'ARCHITECTURE'
+              notValues 'macosx&&arm64'
+            }
           }
         }
         stages {
@@ -57,7 +83,7 @@ pipeline {
             steps {
               deleteDir()
               unstash 'source'
-              withGoEnv(){
+              withGoEnv(version: env.GO_VERSION){
                 dir("${BASE_DIR}"){
                   cmd(label: 'Go build', script: 'go build')
                 }
@@ -66,7 +92,7 @@ pipeline {
           }
           stage('test'){
             steps {
-              withGoEnv(){
+              withGoEnv(version: env.GO_VERSION){
                 dir("${BASE_DIR}"){
                   goTestJUnit(options: '-v ./...', output: 'junit-report.xml')
                   buildExamples()
