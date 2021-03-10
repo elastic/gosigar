@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Deprecated
 
+## [0.15.0]
+
+### Fixed
+
+- Fix unsupported devices for filesystem. [#159](https://github.com/elastic/gosigar/pull/159)
+
 ## [0.14.0]
 
 ### Addded
