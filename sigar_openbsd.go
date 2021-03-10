@@ -19,6 +19,7 @@ import "C"
 //import "github.com/davecgh/go-spew/spew"
 
 import (
+	"fmt"
 	"runtime"
 	"syscall"
 	"time"
@@ -49,8 +50,7 @@ type Uvmexp struct {
 	vtextmin           uint32
 	vnodemin           uint32
 	anonminpct         uint32
-	vtextmi            uint32
-	npct               uint32
+	vtextminpct        uint32
 	vnodeminpct        uint32
 	nswapdev           uint32
 	swpages            uint32
@@ -79,6 +79,7 @@ type Uvmexp struct {
 	zeroaborts         uint32
 	fltnoram           uint32
 	fltnoanon          uint32
+	fltnoamap          uint32
 	fltpgwait          uint32
 	fltpgrele          uint32
 	fltrelck           uint32
@@ -130,6 +131,9 @@ type Bcachestats struct {
 	delwribufs     uint64
 	kvaslots       uint64
 	kvaslots_avail uint64
+	highflips      uint64
+	highflops      uint64
+	dmaflips       uint64
 }
 
 type Swapent struct {
@@ -237,12 +241,12 @@ func (self *Mem) Get() error {
 	// First we determine how much memory we'll need to pass later on (via `n`)
 	_, _, errno := syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(unsafe.Pointer(&mib[0])), 2, 0, uintptr(unsafe.Pointer(&n)), 0, 0)
 	if errno != 0 || n == 0 {
-		return nil
+		return fmt.Errorf("Failed to prepare vm.uvmexp: %d", errno)
 	}
 
 	_, _, errno = syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(unsafe.Pointer(&mib[0])), 2, uintptr(unsafe.Pointer(&uvmexp)), uintptr(unsafe.Pointer(&n)), 0, 0)
 	if errno != 0 || n == 0 {
-		return nil
+		return fmt.Errorf("Failed to query vm.uvmexp: %d", errno)
 	}
 
 	var bcachestats Bcachestats
@@ -250,16 +254,25 @@ func (self *Mem) Get() error {
 	n = uintptr(0)
 	_, _, errno = syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(unsafe.Pointer(&mib3[0])), 3, 0, uintptr(unsafe.Pointer(&n)), 0, 0)
 	if errno != 0 || n == 0 {
-		return nil
+		return fmt.Errorf("Failed to prepare vfs.generic.bcachestat: %d", errno)
 	}
+
 	_, _, errno = syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(unsafe.Pointer(&mib3[0])), 3, uintptr(unsafe.Pointer(&bcachestats)), uintptr(unsafe.Pointer(&n)), 0, 0)
 	if errno != 0 || n == 0 {
-		return nil
+		return fmt.Errorf("Failed to query vfs.generic.bcachestat: %d", errno)
 	}
 
 	self.Total = uint64(uvmexp.npages) << uvmexp.pageshift
 	self.Used = uint64(uvmexp.npages-uvmexp.free) << uvmexp.pageshift
 	self.Free = uint64(uvmexp.free) << uvmexp.pageshift
+
+	// If the kernel interface changes we might silently return bogus
+	// data. So explicitly check for 0 total memory (check this late in
+	// the program flow as by now various kernel interfaces have been
+	// used. cf. https://github.com/elastic/gosigar/issues/72
+	if self.Total == 0 {
+		return fmt.Errorf("Invalid data: zero memory pages found")
+	}
 
 	self.ActualFree = self.Free + (uint64(bcachestats.numbufpages) << uvmexp.pageshift)
 	self.ActualUsed = self.Used - (uint64(bcachestats.numbufpages) << uvmexp.pageshift)
@@ -279,7 +292,7 @@ func (self *Swap) Get() error {
 
 	rnswap := C.swapctl(C.SWAP_STATS, unsafe.Pointer(&swdev[0]), nswap)
 	if rnswap == 0 {
-		return nil
+		return fmt.Errorf("Failed to call swapctl(2)")
 	}
 
 	for i := 0; i < int(nswap); i++ {
