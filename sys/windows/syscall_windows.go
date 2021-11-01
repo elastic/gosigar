@@ -349,15 +349,11 @@ func GetFilesystemType(rootPathName string) (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "UTF16PtrFromString failed for rootPathName=%v", rootPathName)
 	}
-
 	buffer := make([]uint16, MAX_PATH+1)
 	success, err := _GetVolumeInformation(rootPathNamePtr, nil, 0, nil, nil, nil, &buffer[0], MAX_PATH)
-	// check if CD-ROM or other type that is not supported in GetVolumeInformation function
-	if err == ERROR_NOT_READY || err == ERROR_INVALID_FUNCTION {
-		return "", nil
-	}
+	// _GetVolumeInformation will fail for external drives like CD-ROM or other type with error codes as ERROR_NOT_READY. ERROR_INVALID_FUNCTION, ERROR_INVALID_PARAMETER, these types of errors will be handled in the main function
 	if !success {
-		return "", errors.Wrap(err, "GetVolumeInformationW failed")
+		return "", errors.Wrapf(err, "GetVolumeInformationW failed on disk %s", rootPathName)
 	}
 
 	return strings.ToLower(syscall.UTF16ToString(buffer)), nil
