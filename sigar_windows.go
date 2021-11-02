@@ -130,35 +130,23 @@ func (self *FileSystemList) Get() error {
 	if err != nil {
 		return errors.Wrap(err, "GetAccessPaths failed")
 	}
-
 	for _, drive := range drives {
 		dt, err := windows.GetDriveType(drive)
 		if err != nil {
 			return errors.Wrapf(err, "GetDriveType failed")
 		}
-		// GetFilesystemType will fail for external drives like CD-ROM or other type with error codes as ERROR_NOT_READY. ERROR_INVALID_FUNCTION, ERROR_INVALID_PARAMETER, we will do the best effort to retrieve the system type, else value is empty
-		fsType, subErr := windows.GetFilesystemType(drive)
+		fsType, err := windows.GetFilesystemType(drive)
 		if err != nil {
 			return errors.Wrapf(err, "GetFilesystemType failed")
 		}
-		fs := FileSystem{
-			DirName:  drive,
-			DevName:  drive,
-			TypeName: dt.String(),
-		}
-		if fsType != "" {
-			fs.SysTypeName = fsType
-		}
-		self.List = append(self.List, fs)
-		if subErr != nil {
-			if err != nil {
-				err = errors.Wrap(err, subErr.Error())
-			} else {
-				err = subErr
-			}
-		}
+		self.List = append(self.List, FileSystem{
+			DirName:     drive,
+			DevName:     drive,
+			TypeName:    dt.String(),
+			SysTypeName: fsType,
+		})
 	}
-	return err
+	return nil
 }
 
 // Get retrieves a list of all process identifiers (PIDs) in the system.
