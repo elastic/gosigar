@@ -4,6 +4,7 @@ package gosigar
 
 import (
 	"io/ioutil"
+	"os/user"
 	"strconv"
 	"strings"
 	"syscall"
@@ -88,11 +89,25 @@ func (self *ProcFDUsage) Get(pid int) error {
 	if err != nil {
 		return err
 	}
-	fds, err := ioutil.ReadDir(procFileName(pid, "fd"))
+
+	//no point to get FD usage if we are not "root" , this will trigger audit if DISA_STIG has been applied
+	//DISA_STIG V-72127 - All users of the openat command must be audited
+	//on busy systems this will flood audit daemon specially if its continuously running (metricbeat) without root permission
+
+	user, err := user.Current()
 	if err != nil {
 		return err
 	}
-	self.Open = uint64(len(fds))
+	if user.Uid == "0" {
+		fds, err := ioutil.ReadDir(procFileName(pid, "fd"))
+		if err != nil {
+			return err
+		}
+		self.Open = uint64(len(fds))
+	} else {
+		self.Open = 0
+	}
+
 	return nil
 }
 
