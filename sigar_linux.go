@@ -104,8 +104,6 @@ func (self *ProcFDUsage) Get(pid int) error {
 			return err
 		}
 		self.Open = uint64(len(fds))
-	} else {
-		self.Open = 0
 	}
 
 	return nil
