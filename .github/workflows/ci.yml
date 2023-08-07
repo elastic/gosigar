@@ -6,13 +6,7 @@
     push:
       branches:
         - master
-      paths-ignore:
-        - '**.md'
-        - '**.asciidoc'
     pull_request:
-      paths-ignore:
-        - '**.md'
-        - '**.asciidoc'
 
   permissions:
     contents: read
