@@ -58,3 +58,6 @@
 
         - name: Test
           run: go test -v ./...
+
+        - name: Run examples
+          run: ${{ startsWith(matrix.os,'windows') && '.github/examples.bat' || '.github/examples.sh' }}
