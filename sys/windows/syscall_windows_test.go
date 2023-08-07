@@ -92,6 +92,10 @@ func TestEnumProcesses(t *testing.T) {
 }
 
 func TestGetDiskFreeSpaceEx(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("test is not running on latest windows versions. See https://github.com/elastic/gosigar/issues/172")
+		return
+	}
 	drives, err := GetLogicalDriveStrings()
 	if err != nil {
 		t.Fatal(err)
@@ -393,6 +397,10 @@ func TestGetVolumes(t *testing.T) {
 }
 
 func TestGetVolumePathsForVolume(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("test is not running on latest windows versions. See https://github.com/elastic/gosigar/issues/172")
+		return
+	}
 	volumes, err := GetVolumes()
 	if err != nil {
 		t.Fatal(err)
