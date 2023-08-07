@@ -1,48 +1,60 @@
 ---
-name: ci
+  name: ci
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-      - '**.asciidoc'
-  pull_request:
-    paths-ignore:
-      - '**.md'
-      - '**.asciidoc'
+  on:
+    workflow_dispatch:
+    push:
+      branches:
+        - master
+      paths-ignore:
+        - '**.md'
+        - '**.asciidoc'
+    pull_request:
+      paths-ignore:
+        - '**.md'
+        - '**.asciidoc'
 
-permissions:
-  contents: read
+  permissions:
+    contents: read
 
-## Concurrency only allowed in the main branch.
-## So old builds running for old commits within the same Pull Request are cancelled
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  ## Concurrency only allowed in the main branch.
+  ## So old builds running for old commits within the same Pull Request are cancelled
+  concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
+  jobs:
+    lint:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v3
 
-      - uses: actions/setup-go@v4
-        with:
-          go-version-file: .go-version
-          cache: true
-          cache-dependency-path: '**/go.sum'
+        - uses: actions/setup-go@v4
 
-      - name: Lint
-        run: |-
-          go mod tidy && git diff --exit-code
-          gofmt -l . | read && echo "Code differs from gofmt's style. Run 'gofmt -w .'" 1>&2 && exit 1 || true
-          go vet
+        - name: Lint
+          run: |-
+            go mod tidy && git diff --exit-code
+            gofmt -l . | read && echo "Code differs from gofmt's style. Run 'gofmt -w .'" 1>&2 && exit 1 || true
+            go vet
 
-      - name: Build
-        run: go build
+    test:
+      strategy:
+        fail-fast: false
+        matrix:
+          go-version: ['1.15', '1.16']
+          os: [macos-latest, ubuntu-latest, windows-latest]
+      runs-on: ${{ matrix.os }}
+      steps:
+        - uses: actions/checkout@v3
 
-      - name: Test
-        run: go test -v ./...
+        - uses: actions/setup-go@v4
+          with:
+            go-version: ${{ matrix.go-version }}
+            cache: true
+            cache-dependency-path: '**/go.sum'
+
+        - name: Build
+          run: go build
+
+        - name: Test
+          run: go test -v ./...
