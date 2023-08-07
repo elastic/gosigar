@@ -44,7 +44,7 @@
         fail-fast: false
         matrix:
           go-version: ['1.15', '1.16']
-          os: [macos-latest, ubuntu-latest, windows-2019]
+          os: [macos-latest, ubuntu-latest, windows-latest]
       runs-on: ${{ matrix.os }}
       steps:
         - uses: actions/checkout@v3
