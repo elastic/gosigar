@@ -32,8 +32,7 @@
             go mod tidy && git diff --exit-code
             gofmt -l . | read && echo "Code differs from gofmt's style. Run 'gofmt -w .'" 1>&2 && exit 1 || true
             go vet
-
-    test:
+    go-test:
       strategy:
         fail-fast: false
         matrix:
@@ -57,3 +56,14 @@
 
         - name: Run examples
           run: ${{ startsWith(matrix.os,'windows') && '.github/examples.bat' || '.github/examples.sh' }}
+    test:
+      if: always()
+      runs-on: ubuntu-latest
+      needs:
+        - go-test
+      steps:
+        - id: check
+          uses: elastic/apm-pipeline-library/.github/actions/check-dependent-jobs@current
+          with:
+            needs: ${{ toJSON(needs) }}
+        - run: ${{ steps.check.outputs.isSuccess }}
