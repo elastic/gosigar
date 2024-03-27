@@ -20,6 +20,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"os"
 	"os/user"
 	"runtime"
 	"strconv"
@@ -356,7 +357,44 @@ func (self *ProcExe) Get(pid int) error {
 
 // Get returns process file usage
 func (self *ProcFDUsage) Get(pid int) error {
+	if pid == os.Getpid() {
+		return self.GetSelf()
+	}
 	return ErrNotImplemented{runtime.GOOS}
+}
+
+// GetSelf populates ProcFDUsage for the current process.
+func (self *ProcFDUsage) GetSelf() error {
+	openFDs, err := getOpenFileDescriptors()
+	if err != nil {
+		return err
+	}
+
+	var rlim syscall.Rlimit
+	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rlim); err != nil {
+		return err
+	}
+
+	self.Open = openFDs
+	self.SoftLimit = rlim.Cur
+	self.HardLimit = rlim.Max
+	return nil
+}
+
+// getOpenFileDescriptors determines the number of open files for the
+// process by counting the number of files in /dev/fd. The returned
+// count includes the descriptor for /dev/fd itself.
+func getOpenFileDescriptors() (uint64, error) {
+	const fdDir = "/dev/fd"
+	f, err := os.Open(fdDir)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+	// Readdirnames doesn't return . and ..
+	// The first argument is a limit, 0 is unlimited.
+	names, err := f.Readdirnames(0)
+	return uint64(len(names)), err
 }
 
 // kernProcargs is a wrapper around sysctl KERN_PROCARGS2
