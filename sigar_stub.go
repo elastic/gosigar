@@ -1,4 +1,6 @@
-// +build !aix,!darwin,!freebsd,!linux,!openbsd,!windows
+// +build !aix,!darwin,!freebsd,!linux,!openbsd,!windows,ios
+//go:build ios && cgo
+
 
 package gosigar
 
