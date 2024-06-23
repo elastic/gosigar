@@ -1,7 +1,8 @@
 // Copyright (c) 2012 VMware, Inc.
 
 // +build aix darwin freebsd linux
-
+//go:build !ios
+// +build !ios
 package gosigar
 
 import (

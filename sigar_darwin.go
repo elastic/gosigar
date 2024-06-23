@@ -1,5 +1,5 @@
-// +build !386
-
+//go:build !ios && !386
+// +build !ios,!386
 package gosigar
 
 import (
