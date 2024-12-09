@@ -1,3 +1,5 @@
+//go:build !ios
+// +build !ios
 package gosigar
 
 import (

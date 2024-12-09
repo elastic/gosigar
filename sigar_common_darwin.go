@@ -1,5 +1,6 @@
 // Copyright (c) 2012 VMware, Inc.
-
+//go:build !ios
+// +build !ios
 package gosigar
 
 /*
