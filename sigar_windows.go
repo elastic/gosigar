@@ -287,7 +287,7 @@ func getProcCredName(pid int) (string, error) {
 }
 
 func (self *ProcMem) Get(pid int) error {
-	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess|windows.PROCESS_VM_READ, false, uint32(pid))
+	handle, err := syscall.OpenProcess(processQueryLimitedInfoAccess, false, uint32(pid))
 	if err != nil {
 		return errors.Wrapf(err, "OpenProcess failed for pid=%v", pid)
 	}
