@@ -21,9 +21,9 @@
     lint:
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v3
+        - uses: actions/checkout@v4
 
-        - uses: actions/setup-go@v4
+        - uses: actions/setup-go@v5
           with:
             go-version-file: 'go.mod'
 
@@ -36,7 +36,7 @@
       strategy:
         fail-fast: false
         matrix:
-          go-version: ['1.20', '1.21', '1.22']
+          go-version: ['1.21.x', '1.22.x']
           os: [macos-latest, ubuntu-latest, windows-latest]
       runs-on: ${{ matrix.os }}
       steps:

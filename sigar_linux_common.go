@@ -1,5 +1,6 @@
 // Copyright (c) 2012 VMware, Inc.
 
+//go:build freebsd || linux
 // +build freebsd linux
 
 package gosigar

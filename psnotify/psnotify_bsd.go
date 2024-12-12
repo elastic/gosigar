@@ -1,5 +1,6 @@
 // Copyright (c) 2012 VMware, Inc.
 
+//go:build darwin || freebsd || netbsd || openbsd
 // +build darwin freebsd netbsd openbsd
 
 // Go interface to BSD kqueue process events.
