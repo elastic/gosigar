@@ -1,3 +1,4 @@
+//go:build aix
 // +build aix
 
 package gosigar
@@ -403,7 +404,7 @@ func (self *ProcState) Get(pid int) error {
 	return nil
 }
 
-//Get returns the current memory usage of a process
+// Get returns the current memory usage of a process
 func (self *ProcMem) Get(pid int) error {
 	info := C.struct_procsinfo64{}
 	cpid := C.pid_t(pid)

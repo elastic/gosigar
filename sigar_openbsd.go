@@ -1,5 +1,6 @@
 // Copyright (c) 2016 Jasper Lievisse Adriaanse <j@jasper.la>.
 
+//go:build openbsd
 // +build openbsd
 
 package gosigar

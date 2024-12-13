@@ -1,5 +1,6 @@
 // Copyright (c) 2012 VMware, Inc.
 
+//go:build darwin || freebsd || netbsd || openbsd || linux
 // +build darwin freebsd netbsd openbsd linux
 
 package psnotify
