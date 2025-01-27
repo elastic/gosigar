@@ -14,11 +14,13 @@ func init() {
 
 	Procd = "/proc"
 
+	Mtabf = "/etc/mtab"
+
 	getLinuxBootTime()
 }
 
 func getMountTableFileName() string {
-	return "/etc/mtab"
+	return Mtabf
 }
 
 // Get returns uptime data

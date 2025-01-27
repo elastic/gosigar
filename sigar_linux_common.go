@@ -26,6 +26,8 @@ var system struct {
 
 var Procd string
 
+var Mtabf string
+
 func getLinuxBootTime() {
 	// grab system boot time
 	readFile(Procd+"/stat", func(line string) bool {
@@ -372,23 +374,21 @@ func parseMeminfo() (map[string]uint64, error) {
 }
 
 func readFile(file string, handler func(string) bool) error {
-	contents, err := ioutil.ReadFile(file)
+	reader, err := os.Open(file)
 	if err != nil {
 		return err
 	}
+	defer reader.Close()
 
-	reader := bufio.NewReader(bytes.NewBuffer(contents))
-
-	for {
-		line, _, err := reader.ReadLine()
-		if err == io.EOF {
-			break
-		}
-		if !handler(string(line)) {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		if !handler(scanner.Text()) {
 			break
 		}
 	}
-
+	if err := scanner.Err(); err != nil {
+		return err
+	}
 	return nil
 }
 
