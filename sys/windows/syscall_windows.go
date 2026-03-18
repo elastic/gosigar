@@ -195,10 +195,11 @@ func GetAccessPaths() ([]string, error) {
 	var paths []string
 	for _, volumeName := range volumes {
 		volumePaths, err := GetVolumePathsForVolume(volumeName)
-		if err != nil {
+		if err != nil && errors.Cause(err) != syscall.ERROR_FILE_NOT_FOUND {
 			return nil, errors.Wrapf(err, "failed to get list of access paths for volume '%s'", volumeName)
 		}
-		if len(volumePaths) == 0 {
+		if errors.Cause(err) == syscall.ERROR_FILE_NOT_FOUND || len(volumePaths) == 0 {
+			// FILE_NOT_FOUND because GetVolumes can return volume names that don't exist
 			continue
 		}
 
