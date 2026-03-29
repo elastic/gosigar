@@ -11,15 +11,19 @@ package gosigar
 #include <sys/sysctl.h>
 #include <sys/mount.h>
 #include <sys/sched.h>
+#include <sys/types.h>
 #include <sys/swap.h>
 #include <stdlib.h>
+typedef int boolean_t;
 #include <unistd.h>
+#include <uvm/uvm.h>
 */
 import "C"
 
 //import "github.com/davecgh/go-spew/spew"
 
 import (
+	"fmt"
 	"runtime"
 	"syscall"
 	"time"
@@ -232,24 +236,10 @@ func (self *Uptime) Get() error {
 func (self *Mem) Get() error {
 	n := uintptr(0)
 
-	var uvmexp Uvmexp
-	mib := [2]int32{C.CTL_VM, C.VM_UVMEXP}
-	n = uintptr(0)
-	// First we determine how much memory we'll need to pass later on (via `n`)
-	_, _, errno := syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(unsafe.Pointer(&mib[0])), 2, 0, uintptr(unsafe.Pointer(&n)), 0, 0)
-	if errno != 0 || n == 0 {
-		return nil
-	}
-
-	_, _, errno = syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(unsafe.Pointer(&mib[0])), 2, uintptr(unsafe.Pointer(&uvmexp)), uintptr(unsafe.Pointer(&n)), 0, 0)
-	if errno != 0 || n == 0 {
-		return nil
-	}
-
 	var bcachestats Bcachestats
 	mib3 := [3]int32{C.CTL_VFS, C.VFS_GENERIC, C.VFS_BCACHESTAT}
 	n = uintptr(0)
-	_, _, errno = syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(unsafe.Pointer(&mib3[0])), 3, 0, uintptr(unsafe.Pointer(&n)), 0, 0)
+	_, _, errno := syscall.Syscall6(syscall.SYS___SYSCTL, uintptr(unsafe.Pointer(&mib3[0])), 3, 0, uintptr(unsafe.Pointer(&n)), 0, 0)
 	if errno != 0 || n == 0 {
 		return nil
 	}
@@ -258,12 +248,19 @@ func (self *Mem) Get() error {
 		return nil
 	}
 
-	self.Total = uint64(uvmexp.npages) << uvmexp.pageshift
-	self.Used = uint64(uvmexp.npages-uvmexp.free) << uvmexp.pageshift
-	self.Free = uint64(uvmexp.free) << uvmexp.pageshift
+	var uvmexp C.struct_uvmexp
+	size := C.ulong(unsafe.Sizeof(uvmexp))
+	mib := [2]int32{C.CTL_VM, C.VM_UVMEXP}
+	if ret := C.sysctl((*C.int)(unsafe.Pointer(&mib[0])), 2, unsafe.Pointer(&uvmexp), &size, nil, 0); ret < 0 {
+		return fmt.Errorf("Error calling sysctl: %d", ret)
+	}
 
-	self.ActualFree = self.Free + (uint64(bcachestats.numbufpages) << uvmexp.pageshift)
-	self.ActualUsed = self.Used - (uint64(bcachestats.numbufpages) << uvmexp.pageshift)
+	self.Total = uint64(uvmexp.npages) << uint(uvmexp.pageshift)
+	self.Used = uint64(uvmexp.npages-uvmexp.free) << uint(uvmexp.pageshift)
+	self.Free = uint64(uvmexp.free) << uint(uvmexp.pageshift)
+
+	self.ActualFree = self.Free + (uint64(bcachestats.numbufpages) << uint(uvmexp.pageshift))
+	self.ActualUsed = self.Used - (uint64(bcachestats.numbufpages) << uint(uvmexp.pageshift))
 
 	return nil
 }
