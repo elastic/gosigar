@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"syscall"
 	"text/tabwriter"
@@ -87,17 +88,70 @@ func sockets() error {
 	}, "\t"))
 	defer w.Flush()
 
-	for _, diag := range msgs {
-		// XXX: A real implementation of ss would find the process holding
-		// inode of the socket. It would read /proc/<pid>/fd and find all sockets.
-		pidProgram := "not implemented"
+	inodeToPid := mapInodesToPid()
 
+	for _, diag := range msgs {
 		fmt.Fprintf(w, "%v\t%v\t%v\t%v:%v\t%v:%v\t%v\t%v\t%v\n",
 			linux.TCPState(diag.State), diag.RQueue, diag.WQueue,
 			diag.SrcIP().String(), diag.SrcPort(),
 			diag.DstIP().String(), diag.DstPort(),
-			diag.UID, diag.Inode, pidProgram)
+			diag.UID, diag.Inode, inodeToPid[diag.Inode])
 	}
 
 	return nil
+}
+
+func mapInodesToPid() (ret map[uint32]string) {
+	ret = map[uint32]string{}
+
+	fd, err := os.Open("/proc")
+	if err != nil {
+		fmt.Printf("Error opening /proc: %v", err)
+	}
+	defer fd.Close()
+
+	dirContents, err := fd.Readdirnames(0)
+	if err != nil {
+		fmt.Printf("Error reading files in /proc: %v", err)
+	}
+
+	for _, pid := range dirContents {
+		_, err := strconv.ParseUint(pid, 10, 32)
+		if err != nil {
+			// exclude files with a not numeric name. We only want to access pid directories
+			continue
+		}
+
+		pidDir, err := os.Open("/proc/" + string(pid) + "/fd/")
+		if err != nil {
+			// ignore errors:
+			//   - missing directory, pid has already finished
+			//   - permission denied
+			continue
+		}
+
+		fds, err := pidDir.Readdirnames(0)
+		if err != nil {
+			continue
+		}
+
+		for _, fd := range fds {
+			link, err := os.Readlink("/proc/" + string(pid) + "/fd/" + fd)
+			if err != nil {
+				continue
+			}
+
+			var inode uint32
+
+			_, err = fmt.Sscanf(link, "socket:[%d]", &inode)
+			if err != nil {
+				// this inode is not a socket
+				continue
+			}
+
+			ret[inode] = pid
+		}
+	}
+
+	return ret
 }
