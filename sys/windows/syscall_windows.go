@@ -302,6 +302,9 @@ func GetProcessImageFileName(handle syscall.Handle) (string, error) {
 // GetSystemTimes retrieves system timing information. On a multiprocessor
 // system, the values returned are the sum of the designated times across all
 // processors. The returned kernel time does not include the system idle time.
+// On systems with more than 64 logical processors only the calling thread's
+// primary processor group is included; sum NtQuerySystemProcessorPerformanceInformation
+// for system-wide totals.
 // https://msdn.microsoft.com/en-us/library/windows/desktop/ms724400(v=vs.85).aspx
 func GetSystemTimes() (idle, kernel, user time.Duration, err error) {
 	var idleTime, kernelTime, userTime syscall.Filetime
@@ -610,6 +613,7 @@ func GetTickCount64() (uptime uint64, err error) {
 //sys   _GetLogicalDriveStringsW(bufferLength uint32, buffer *uint16) (length uint32, err error) = kernel32.GetLogicalDriveStringsW
 //sys   _GetProcessMemoryInfo(handle syscall.Handle, psmemCounters *ProcessMemoryCountersEx, cb uint32) (err error) = psapi.GetProcessMemoryInfo
 //sys   _GetProcessImageFileName(handle syscall.Handle, outImageFileName *uint16, size uint32) (length uint32, err error) = psapi.GetProcessImageFileNameW
+//sys   _GetActiveProcessorGroupCount() (count uint16) = kernel32.GetActiveProcessorGroupCount
 //sys   _GetSystemTimes(idleTime *syscall.Filetime, kernelTime *syscall.Filetime, userTime *syscall.Filetime) (err error) = kernel32.GetSystemTimes
 //sys   _GetDriveType(rootPathName *uint16) (dt DriveType, err error) = kernel32.GetDriveTypeW
 //sys   _GetVolumeInformation(rootPathName *uint16, volumeName *uint16, volumeNameSize uint32, volumeSerialNumber *uint32, maximumComponentLength *uint32, fileSystemFlags *uint32, fileSystemName *uint16, fileSystemNameSize uint32) (success bool, err error) [true] = kernel32.GetVolumeInformationW
@@ -619,6 +623,7 @@ func GetTickCount64() (uptime uint64, err error) {
 //sys   _Process32Next(handle syscall.Handle, processEntry32 *ProcessEntry32) (err error) = kernel32.Process32NextW
 //sys   _CreateToolhelp32Snapshot(flags uint32, processID uint32) (handle syscall.Handle, err error) = kernel32.CreateToolhelp32Snapshot
 //sys   _NtQuerySystemInformation(systemInformationClass uint32, systemInformation *byte, systemInformationLength uint32, returnLength *uint32) (ntstatus uint32, err error) = ntdll.NtQuerySystemInformation
+//sys   _NtQuerySystemInformationEx(systemInformationClass uint32, inputBuffer *byte, inputBufferLength uint32, systemInformation *byte, systemInformationLength uint32, returnLength *uint32) (ntstatus uint32, err error) = ntdll.NtQuerySystemInformationEx
 //sys   _NtQueryInformationProcess(processHandle syscall.Handle, processInformationClass uint32, processInformation *byte, processInformationLength uint32, returnLength *uint32) (ntstatus uint32, err error) = ntdll.NtQueryInformationProcess
 //sys   _LookupPrivilegeName(systemName string, luid *int64, buffer *uint16, size *uint32) (err error) = advapi32.LookupPrivilegeNameW
 //sys   _LookupPrivilegeValue(systemName string, name string, luid *int64) (err error) = advapi32.LookupPrivilegeValueW

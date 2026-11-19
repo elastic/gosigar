@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
-	"runtime"
 	"syscall"
 	"time"
 	"unsafe"
@@ -69,8 +68,9 @@ type _SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION struct {
 }
 
 // NtQuerySystemProcessorPerformanceInformation queries CPU performance
-// information for each CPU. It uses the NtQuerySystemInformation function to
-// collect the SystemProcessorPerformanceInformation.
+// information for each active CPU in every processor group, ordered by group.
+// NtQuerySystemInformation only reports the calling thread's group, so this
+// uses NtQuerySystemInformationEx once per group.
 // https://msdn.microsoft.com/en-us/library/windows/desktop/ms724509(v=vs.85).aspx
 func NtQuerySystemProcessorPerformanceInformation() ([]SystemProcessorPerformanceInformation, error) {
 	// NTSTATUS code for success.
@@ -81,18 +81,41 @@ func NtQuerySystemProcessorPerformanceInformation() ([]SystemProcessorPerformanc
 	// http://processhacker.sourceforge.net/doc/ntexapi_8h.html#ad5d815b48e8f4da1ef2eb7a2f18a54e0
 	const systemProcessorPerformanceInformation = 8
 
-	// Create a buffer large enough to hold an entry for each processor.
-	b := make([]byte, runtime.NumCPU()*sizeofSystemProcessorPerformanceInformation)
+	// MAXIMUM_PROC_PER_GROUP; sizing to the maximum avoids racing processor hot-add.
+	const maxProcessorsPerGroup = 64
 
-	// Query the performance information. Note that this function uses 0 to
-	// indicate success. Most other Windows functions use non-zero for success.
-	var returnLength uint32
-	ntStatus, _ := _NtQuerySystemInformation(systemProcessorPerformanceInformation, &b[0], uint32(len(b)), &returnLength)
-	if ntStatus != STATUS_SUCCESS {
-		return nil, errors.Errorf("NtQuerySystemInformation failed, NTSTATUS=0x%X, bufLength=%v, returnLength=%v", ntStatus, len(b), returnLength)
+	groups := _GetActiveProcessorGroupCount()
+	if groups == 0 {
+		return nil, errors.New("GetActiveProcessorGroupCount returned 0")
 	}
 
-	return readSystemProcessorPerformanceInformationBuffer(b)
+	b := make([]byte, maxProcessorsPerGroup*sizeofSystemProcessorPerformanceInformation)
+	var rtn []SystemProcessorPerformanceInformation
+	for group := uint16(0); group < groups; group++ {
+		// Note that this function uses 0 to indicate success. Most other
+		// Windows functions use non-zero for success.
+		var returnLength uint32
+		ntStatus, _ := _NtQuerySystemInformationEx(systemProcessorPerformanceInformation,
+			(*byte)(unsafe.Pointer(&group)), uint32(unsafe.Sizeof(group)),
+			&b[0], uint32(len(b)), &returnLength)
+		if ntStatus != STATUS_SUCCESS {
+			return nil, errors.Errorf("NtQuerySystemInformationEx failed for processor group %v, NTSTATUS=0x%X, bufLength=%v, returnLength=%v", group, ntStatus, len(b), returnLength)
+		}
+		if int(returnLength) > len(b) {
+			return nil, errors.Errorf("NtQuerySystemInformationEx returned length %v larger than buffer %v for processor group %v", returnLength, len(b), group)
+		}
+
+		cpus, err := readSystemProcessorPerformanceInformationBuffer(b[:returnLength])
+		if err != nil {
+			return nil, err
+		}
+		rtn = append(rtn, cpus...)
+	}
+
+	if len(rtn) == 0 {
+		return nil, errors.New("NtQuerySystemInformationEx returned no processors")
+	}
+	return rtn, nil
 }
 
 // readSystemProcessorPerformanceInformationBuffer reads from a buffer

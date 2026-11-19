@@ -96,9 +96,18 @@ func (self *HugeTLBPages) Get() error {
 }
 
 func (self *Cpu) Get() error {
-	idle, kernel, user, err := windows.GetSystemTimes()
+	// GetSystemTimes only covers the calling thread's processor group on
+	// systems with more than 64 logical processors, so sum every CPU instead.
+	cpus, err := windows.NtQuerySystemProcessorPerformanceInformation()
 	if err != nil {
-		return errors.Wrap(err, "GetSystemTimes failed")
+		return errors.Wrap(err, "NtQuerySystemProcessorPerformanceInformation failed")
+	}
+
+	var idle, kernel, user time.Duration
+	for _, cpu := range cpus {
+		idle += cpu.IdleTime
+		kernel += cpu.KernelTime
+		user += cpu.UserTime
 	}
 
 	// CPU times are reported in milliseconds by gosigar.
