@@ -103,17 +103,16 @@ func (self *Cpu) Get() error {
 		return errors.Wrap(err, "NtQuerySystemProcessorPerformanceInformation failed")
 	}
 
-	var idle, kernel, user time.Duration
+	var idle, kernel, user uint64
 	for _, cpu := range cpus {
-		idle += cpu.IdleTime
-		kernel += cpu.KernelTime
-		user += cpu.UserTime
+		idle += uint64(cpu.IdleTime / time.Millisecond)
+		kernel += uint64(cpu.KernelTime / time.Millisecond)
+		user += uint64(cpu.UserTime / time.Millisecond)
 	}
 
-	// CPU times are reported in milliseconds by gosigar.
-	self.Idle = uint64(idle / time.Millisecond)
-	self.Sys = uint64(kernel / time.Millisecond)
-	self.User = uint64(user / time.Millisecond)
+	self.Idle = idle
+	self.Sys = kernel
+	self.User = user
 	return nil
 }
 
