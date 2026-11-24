@@ -50,6 +50,7 @@ var (
 	procFindFirstVolumeW                 = modkernel32.NewProc("FindFirstVolumeW")
 	procFindNextVolumeW                  = modkernel32.NewProc("FindNextVolumeW")
 	procFindVolumeClose                  = modkernel32.NewProc("FindVolumeClose")
+	procGetActiveProcessorGroupCount     = modkernel32.NewProc("GetActiveProcessorGroupCount")
 	procGetDiskFreeSpaceExW              = modkernel32.NewProc("GetDiskFreeSpaceExW")
 	procGetDriveTypeW                    = modkernel32.NewProc("GetDriveTypeW")
 	procGetLogicalDriveStringsW          = modkernel32.NewProc("GetLogicalDriveStringsW")
@@ -63,6 +64,7 @@ var (
 	procReadProcessMemory                = modkernel32.NewProc("ReadProcessMemory")
 	procNtQueryInformationProcess        = modntdll.NewProc("NtQueryInformationProcess")
 	procNtQuerySystemInformation         = modntdll.NewProc("NtQuerySystemInformation")
+	procNtQuerySystemInformationEx       = modntdll.NewProc("NtQuerySystemInformationEx")
 	procEnumProcesses                    = modpsapi.NewProc("EnumProcesses")
 	procGetProcessImageFileNameW         = modpsapi.NewProc("GetProcessImageFileNameW")
 	procGetProcessMemoryInfo             = modpsapi.NewProc("GetProcessMemoryInfo")
@@ -151,6 +153,12 @@ func _FindVolumeClose(handle syscall.Handle) (err error) {
 	if r1 == 0 {
 		err = errnoErr(e1)
 	}
+	return
+}
+
+func _GetActiveProcessorGroupCount() (count uint16) {
+	r0, _, _ := syscall.Syscall(procGetActiveProcessorGroupCount.Addr(), 0, 0, 0, 0)
+	count = uint16(r0)
 	return
 }
 
@@ -266,6 +274,15 @@ func _NtQueryInformationProcess(processHandle syscall.Handle, processInformation
 
 func _NtQuerySystemInformation(systemInformationClass uint32, systemInformation *byte, systemInformationLength uint32, returnLength *uint32) (ntstatus uint32, err error) {
 	r0, _, e1 := syscall.Syscall6(procNtQuerySystemInformation.Addr(), 4, uintptr(systemInformationClass), uintptr(unsafe.Pointer(systemInformation)), uintptr(systemInformationLength), uintptr(unsafe.Pointer(returnLength)), 0, 0)
+	ntstatus = uint32(r0)
+	if ntstatus == 0 {
+		err = errnoErr(e1)
+	}
+	return
+}
+
+func _NtQuerySystemInformationEx(systemInformationClass uint32, inputBuffer *byte, inputBufferLength uint32, systemInformation *byte, systemInformationLength uint32, returnLength *uint32) (ntstatus uint32, err error) {
+	r0, _, e1 := syscall.Syscall6(procNtQuerySystemInformationEx.Addr(), 6, uintptr(systemInformationClass), uintptr(unsafe.Pointer(inputBuffer)), uintptr(inputBufferLength), uintptr(unsafe.Pointer(systemInformation)), uintptr(systemInformationLength), uintptr(unsafe.Pointer(returnLength)))
 	ntstatus = uint32(r0)
 	if ntstatus == 0 {
 		err = errnoErr(e1)

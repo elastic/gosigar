@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/sys/windows"
 )
 
 func TestGetProcessImageFileName(t *testing.T) {
@@ -174,7 +175,7 @@ func TestNtQuerySystemProcessorPerformanceInformation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assert.Len(t, cpus, runtime.NumCPU())
+	assert.Len(t, cpus, int(windows.GetActiveProcessorCount(windows.ALL_PROCESSOR_GROUPS)))
 
 	for i, cpu := range cpus {
 		assert.NotZero(t, cpu.IdleTime)

@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Windows: `NtQuerySystemProcessorPerformanceInformation` returns every active CPU. It no longer sizes its buffer with `runtime.NumCPU()`, which the process affinity mask limits, and it queries each processor group with `NtQuerySystemInformationEx` so systems with more than 64 logical processors are fully reported.
+- Windows: `Cpu.Get` sums per-CPU times instead of using `GetSystemTimes`, which only covers one processor group on systems with more than 64 logical processors.
+
 ### Changed
 
 ### Deprecated
