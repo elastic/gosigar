@@ -12,6 +12,7 @@ package gosigar
 #include <libproc.h>
 #include <mach/processor_info.h>
 #include <mach/vm_map.h>
+#include <mach/mach_time.h>
 */
 import "C"
 
@@ -303,11 +304,14 @@ func (self *ProcTime) Get(pid int) error {
 		return err
 	}
 
-	self.User =
-		uint64(info.ptinfo.pti_total_user) / uint64(time.Millisecond)
+	var timebase C.struct_mach_timebase_info
+	if C.mach_timebase_info(&timebase) != 0 || timebase.denom == 0 {
+		return fmt.Errorf("Could not read mach timebase")
+	}
 
-	self.Sys =
-		uint64(info.ptinfo.pti_total_system) / uint64(time.Millisecond)
+	// proc_pidinfo counts mach ticks. Nanoseconds are ticks * numer / denom.
+	self.User = machTicksToMillis(uint64(info.ptinfo.pti_total_user), timebase)
+	self.Sys = machTicksToMillis(uint64(info.ptinfo.pti_total_system), timebase)
 
 	self.Total = self.User + self.Sys
 
@@ -315,6 +319,10 @@ func (self *ProcTime) Get(pid int) error {
 		(uint64(info.pbsd.pbi_start_tvusec) / 1000)
 
 	return nil
+}
+
+func machTicksToMillis(ticks uint64, timebase C.struct_mach_timebase_info) uint64 {
+	return ticks * uint64(timebase.numer) / uint64(timebase.denom) / uint64(time.Millisecond)
 }
 
 // Get returns process arg data
